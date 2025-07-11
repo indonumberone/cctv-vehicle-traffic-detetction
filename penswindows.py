@@ -72,7 +72,7 @@ while cap.isOpened():
     frame_count += 1
     
     # Proses YOLO tracking
-    resuls = model.track(frame, persist=True, classes=[1,2,3,4,5,7])
+    resuls = model.track(frame, persist=True, classes=[1,2,3,4,5,7],device='CPU')
     print("Results:", resuls[0].boxes.data)
     
     if resuls[0].boxes.data is not None and resuls[0].boxes.id is not None:
