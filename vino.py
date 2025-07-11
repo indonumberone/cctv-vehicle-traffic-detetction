@@ -4,6 +4,8 @@ from collections import defaultdict, deque
 import time
 import numpy as np
 
+# Configuration line
+
 LINES = [
     ((312, 359), (150, 418)),
     ((132, 448), (492, 463)),

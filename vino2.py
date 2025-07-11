@@ -6,7 +6,7 @@ import numpy as np
 import threading
 import queue
 
-# Configuration
+# Configuration linee
 LINES = [
     ((312, 359), (150, 418)),
     ((132, 448), (492, 463)),

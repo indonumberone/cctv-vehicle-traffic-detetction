@@ -3,7 +3,7 @@ from ultralytics import YOLO
 YOLO_MODEL = "yolov8n.pt"  
 
 
-#to export to ONNX
+#to export to ONNX model
 # model= YOLO(YOLO_MODEL)
 # model.export(
 #         format="onnx",          
