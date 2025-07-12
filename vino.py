@@ -2,118 +2,195 @@ import cv2
 from ultralytics import YOLO
 from collections import defaultdict, deque
 import time
-import numpy as np
+import threading
+import queue
 
-# Configuration line
 
-LINES = [
-    ((312, 359), (150, 418)),
-    ((132, 448), (492, 463)),
-    ((521, 462), (949, 448)),
-    ((719, 347), (852, 396))
-]
-OUTPUT_FILE = 'output_yolone.mp4'
-MODEL_PATH = 'yolov8n_openvino_model'  
-VIDEO_PATH = 'out_pens0.mp4'
-CLASSES_TO_TRACK = [1, 2, 3, 4, 5, 7]  
+class FPSMeter:
+    def __init__(self, buffer_size=60):
+        self.processing_times = deque(maxlen=buffer_size)
+        self.frame_intervals = deque(maxlen=buffer_size)
+        self.last_capture_time = None
 
-model = YOLO(MODEL_PATH) 
-cap = cv2.VideoCapture(VIDEO_PATH)
-class_list = model.names
-print("Classes in model:", class_list)
+    def update_processing_time(self, start_time, end_time):
+        elapsed = end_time - start_time
+        if elapsed > 0:
+            fps = 1.0 / elapsed
+            self.processing_times.append(fps)
 
-class_counts = defaultdict(int)
-track_history = {}
-track_object_ids_per_line = [set() for _ in LINES]
+    def update_frame_interval(self, current_time):
+        if self.last_capture_time is not None:
+            interval = current_time - self.last_capture_time
+            if interval > 0:
+                real_fps = 1.0 / interval
+                self.frame_intervals.append(real_fps)
+        self.last_capture_time = current_time
 
-fps_buffer = deque(maxlen=30)
-fps_output = 25
-warmup_frames = 10
+    def get_avg_processing_fps(self):
+        return sum(self.processing_times) / len(self.processing_times) if self.processing_times else 0.0
 
-out = None
-frame_count = 0
-if cap.isOpened():
-    ret, frame = cap.read()
-    if ret:
-        height, width = frame.shape[:2]
-        out = cv2.VideoWriter(OUTPUT_FILE, cv2.VideoWriter_fourcc(*'mp4v'), fps_output, (width, height))
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    def get_avg_real_fps(self):
+        return sum(self.frame_intervals) / len(self.frame_intervals) if self.frame_intervals else 0.0
 
-def is_crossing_line(p1, p2, line_start, line_end):
-    """Check if line segment p1-p2 crosses the reference line."""
-    def ccw(a, b, c):
-        return (b[1]-a[1])*(c[0]-a[0]) - (b[0]-a[0])*(c[1]-a[1])
-    return (ccw(p1, line_start, line_end) * ccw(p2, line_start, line_end) < 0) and \
-           (ccw(p1, p2, line_start) * ccw(p1, p2, line_end) < 0)
+class LineCrossingCounter:
+    def __init__(self, lines):
+        self.lines = lines
+        self.track_history = {}
+        self.class_counts = defaultdict(int)
+        self.crossed_ids_per_line = [set() for _ in lines]
 
-while cap.isOpened():
-    start_time = time.time()
-    ret, frame = cap.read()
-    if not ret:
-        break
-    frame_count += 1
-    results =  model.track(frame, persist=True, classes=CLASSES_TO_TRACK,device='CPU')
-    
-    if results[0].boxes.id is not None:
+    def update(self, track_id, class_name, center):
+        if track_id not in self.track_history:
+            self.track_history[track_id] = deque(maxlen=30)
+        self.track_history[track_id].append(center)
+
+        if len(self.track_history[track_id]) >= 2:
+            prev, curr = self.track_history[track_id][-2], self.track_history[track_id][-1]
+            for i, (start, end) in enumerate(self.lines):
+                if self._is_crossing_line(prev, curr, start, end):
+                    if track_id not in self.crossed_ids_per_line[i]:
+                        self.crossed_ids_per_line[i].add(track_id)
+                        self.class_counts[class_name] += 1
+                        print(f"{class_name} ID {track_id} crossed line {i+1}")
+
+    def _is_crossing_line(self, p1, p2, line_start, line_end):
+        def ccw(a, b, c):
+            return (b[1]-a[1])*(c[0]-a[0]) - (b[0]-a[0])*(c[1]-a[1])
+        return (ccw(p1, line_start, line_end) * ccw(p2, line_start, line_end) < 0) and \
+               (ccw(p1, p2, line_start) * ccw(p1, p2, line_end) < 0)
+
+    def get_counts(self):
+        return self.class_counts
+
+class FrameProcessor:
+    def __init__(self, model, counter, class_names, classes_to_track):
+        self.model = model
+        self.counter = counter
+        self.class_names = class_names
+        self.classes_to_track = classes_to_track
+
+    def process(self, frame):
+        results = self.model.track(frame, persist=True, classes=self.classes_to_track, device='CPU')
+        if results[0].boxes.id is None:
+            return frame
+        
         boxes = results[0].boxes.xyxy.cpu().numpy()
-        track_ids = results[0].boxes.id.int().cpu().tolist()
-        class_ids = results[0].boxes.cls.int().cpu().tolist()
+        ids = results[0].boxes.id.int().cpu().tolist()
+        cls_ids = results[0].boxes.cls.int().cpu().tolist()
 
-        for box, track_id, class_id in zip(boxes, track_ids, class_ids):
+        for box, track_id, class_id in zip(boxes, ids, cls_ids):
             x1, y1, x2, y2 = map(int, box)
-            class_name = class_list[class_id]
+            class_name = self.class_names[class_id]
             center = ((x1 + x2) // 2, (y1 + y2) // 2)
 
-            if track_id not in track_history:
-                track_history[track_id] = deque(maxlen=30)
-            track_history[track_id].append(center)
+            self.counter.update(track_id, class_name, center)
 
-            if len(track_history[track_id]) >= 2:
-                prev, curr = track_history[track_id][-2], track_history[track_id][-1]
-                for i, (line_start, line_end) in enumerate(LINES):
-                    if is_crossing_line(prev, curr, line_start, line_end):
-                        if track_id not in track_object_ids_per_line[i]:
-                            track_object_ids_per_line[i].add(track_id)
-                            class_counts[class_name] += 1
-                            print(f"{class_name} ID {track_id} crossed line {i+1}")
-
-            # Visualization
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.circle(frame, center, 5, (255, 0, 0), -1)
+            cv2.circle(frame, center, 4, (255, 0, 0), -1)
             cv2.putText(frame, f"{class_name} {track_id}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        return frame
 
-    for i, (start, end) in enumerate(LINES):
-        cv2.line(frame, start, end, (0, 0, 255), 2)
-        cv2.putText(frame, f"Line {i+1}", (start[0], start[1] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+class Main:
+    def __init__(self,model_path,video_output,video_input):
+        self.model_path = model_path
+        self.video_output = video_output
+        self.video_input = video_input
+        self.LINES = [
+            ((312, 359), (150, 418)),
+            ((132, 448), (492, 463)),
+            ((521, 462), (949, 448)),
+            ((719, 347), (852, 396))
+        ]
+        self.CLASSES_TO_TRACK = [1, 2, 3, 4, 5, 7],
+        self.frame_queue = queue.Queue(maxsize=30)
+        self.result_queue = queue.Queue(maxsize=30)
+        self.stop_event = threading.Event()
+        
+    def read_frames(self, cap):
+        while not self.stop_event.is_set():
+            if self.frame_queue.qsize() < 30:
+                ret, frame = cap.read()
+                if not ret:
+                    self.stop_event.set()
+                    break
+                timestamp = time.time()
+                self.frame_queue.put((frame, timestamp))
+            else:
+                time.sleep(0.001)
+                
+    def process_frames(self, processor):
+                while not self.stop_event.is_set():
+                    if not self.frame_queue.empty():
+                        try:
+                            frame, timestamp = self.frame_queue.get(timeout=0.001)
+                            start_proc = time.time()
+                            result_frame = processor.process(frame)
+                            end_proc = time.time()
+                            self.result_queue.put((result_frame, timestamp, start_proc, end_proc))
+                        except queue.Empty:
+                            continue
+                    else:
+                        time.sleep(0.001)
 
-    current_fps = 1 / (time.time() - start_time + 1e-6)
-    fps_buffer.append(current_fps)
-    avg_fps = sum(fps_buffer) / len(fps_buffer)
+    def detect(self):
+        model = YOLO(self.model_path)
+        cap = cv2.VideoCapture(self.video_input)
+        counter = LineCrossingCounter(self.LINES)
+        processor = FrameProcessor(model, counter, model.names, self.CLASSES_TO_TRACK)
+        fps_meter = FPSMeter(buffer_size=60)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out = cv2.VideoWriter(self.video_output, cv2.VideoWriter_fourcc(*'mp4v'), 25, (width, height))
 
-    if frame_count > warmup_frames:
-        new_fps = max(1, min(60, int(avg_fps)))
-        if abs(new_fps - fps_output) > 1:
-            fps_output = new_fps
-            out.release()
-            out = cv2.VideoWriter(OUTPUT_FILE, cv2.VideoWriter_fourcc(*'mp4v'), fps_output, (width, height))
+        read_thread = threading.Thread(target=self.read_frames, args=(cap,))
+        process_thread = threading.Thread(target=self.process_frames, args=(processor,))
+        read_thread.start()
+        process_thread.start()
 
-    y_pos = 30
-    for class_name, count in class_counts.items():
-        cv2.putText(frame, f"{class_name}: {count}", (10, y_pos),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        y_pos += 25
+        while not self.stop_event.is_set() or not self.result_queue.empty():
+            if self.result_queue.empty():
+                time.sleep(0.001)
+                continue
 
-    cv2.putText(frame, f"FPS: {avg_fps:.1f} (Output: {fps_output})", (10, y_pos + 40),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            frame, capture_time, start_proc, end_proc = self.result_queue.get()
 
-    cv2.imshow('Tracking', frame)
-    out.write(frame)
-    if cv2.waitKey(1) == 27:
-        break
+            for i, (start, end) in enumerate(self.LINES):
+                cv2.line(frame, start, end, (0, 0, 255), 2)
 
-cap.release()
-out.release()
-cv2.destroyAllWindows()
-print(f"Final stats - Avg FPS: {avg_fps:.1f}, Counts: {dict(class_counts)}")
+            fps_meter.update_processing_time(start_proc, end_proc)
+            fps_meter.update_frame_interval(capture_time)
+
+            avg_proc_fps = fps_meter.get_avg_processing_fps()
+            avg_real_fps = fps_meter.get_avg_real_fps()
+
+            y_pos = 85
+            for class_name, count in counter.get_counts().items():
+                cv2.putText(frame, f"{class_name}: {count}", (10, y_pos),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                y_pos += 30
+
+            cv2.putText(frame, f"Processing FPS: {avg_proc_fps:.1f}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            cv2.putText(frame, f"Real Video FPS: {avg_real_fps:.1f}", (10, 55),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+            cv2.imshow("Tracking", frame)
+            out.write(frame)
+
+            if cv2.waitKey(1) == 27:
+                self.stop_event.set()
+                break
+
+        read_thread.join()
+        process_thread.join()
+        cap.release()
+        out.release()
+        cv2.destroyAllWindows()
+
+        
+if __name__ == "__main__":
+    app = Main('yolov8n_openvino_model', 'output_yolone.mp4', 'out_pens0.mp4')
+    app.detect()
+
+
