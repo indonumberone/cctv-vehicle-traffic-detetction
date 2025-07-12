@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-YOLO_MODEL = "yolov8n.pt"  
+YOLO_MODEL = "yolov8m.pt"  
 
 
 #to export to ONNX model
@@ -16,5 +16,6 @@ YOLO_MODEL = "yolov8n.pt"
 model= YOLO(YOLO_MODEL)
 model.export(
     format="openvino",
-    imgsz=(384, 640)
+    imgsz=(384, 640),
+    simplify=True,
 )
