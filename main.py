@@ -105,28 +105,29 @@ class FrameProcessor:
         self.counter = counter
         self.class_names = class_names
         self.classes_to_track = classes_to_track
+        self.tracker = sv.ByteTrack()
 
     def process(self, frame):
-        results = self.model.track(frame, persist=True, classes=self.classes_to_track, device='CPU',tracker="bytetrack.yaml",conf=0.5, iou=0.4)
-        if results[0].boxes.id is None:
+            results = self.model(frame, classes=self.classes_to_track, device='CPU', conf=0.5, iou=0.4)
+            if results[0].boxes is None or len(results[0].boxes) == 0:
+                return frame
+            detections = sv.Detections.from_ultralytics(results[0])
+            detections = self.tracker.update_with_detections(detections)
+            for i in range(len(detections)):
+                x1, y1, x2, y2 = detections.xyxy[i].astype(int)
+                track_id = detections.tracker_id[i] if detections.tracker_id is not None else None
+                class_id = int(detections.class_id[i])
+                class_name = self.class_names[class_id]
+                center = ((x1 + x2) // 2, (y1 + y2) // 2)
+                print(f"Detection: {class_name} {track_id} [{x1}, {y1}, {x2}, {y2}]")
+                
+                if track_id is not None:
+                    self.counter.update(track_id, class_name, center)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.circle(frame, center, 4, (255, 0, 0), -1)
+                    cv2.putText(frame, f"{class_name} {track_id}", (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             return frame
-        
-        boxes = results[0].boxes.xyxy.cpu().numpy()
-        ids = results[0].boxes.id.int().cpu().tolist()
-        cls_ids = results[0].boxes.cls.int().cpu().tolist()
-        for box, track_id, class_id in zip(boxes, ids, cls_ids):
-            x1, y1, x2, y2 = map(int, box)
-            class_name = self.class_names[class_id]
-            center = ((x1 + x2) // 2, (y1 + y2) // 2)
-
-            self.counter.update(track_id, class_name, center)
-
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.circle(frame, center, 4, (255, 0, 0), -1)
-            cv2.putText(frame, f"{class_name} {track_id}", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        return frame
-
 class Main:
     def __init__(self, model_path, video_output, video_input, global_cleanup_timeout=3600.0):
         self.model_path = model_path
@@ -142,7 +143,6 @@ class Main:
         self.frame_queue = queue.Queue(maxsize=30)
         self.result_queue = queue.Queue(maxsize=30)
         self.stop_event = threading.Event()
-        self.tracker = sv.ByteTrack()
         
     def read_frames(self, cap):
         while not self.stop_event.is_set():
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     app = Main(
         'best_openvino_model', 
         'video/output/result.mp4', 
-        'video/input/input0.mp4', 
+        'video/input/input1.mp4', 
         global_cleanup_timeout=3600.0 
     )
     app.detect()
