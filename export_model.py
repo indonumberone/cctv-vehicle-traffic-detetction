@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-YOLO_MODEL = "yolov8m.pt"  
+YOLO_MODEL = "best.pt"  
 
 
 #to export to ONNX model
