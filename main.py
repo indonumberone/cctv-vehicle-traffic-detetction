@@ -105,7 +105,7 @@ class FrameProcessor:
         self.counter = counter
         self.class_names = class_names
         self.classes_to_track = classes_to_track
-        self.tracker = sv.ByteTrack(track_thresh=0.25, track_buffer=30, match_thresh=0.8, frame_rate=60)
+        self.tracker = sv.ByteTrack()
 
     def process(self, frame):
             results = self.model(frame, classes=self.classes_to_track, device='CPU', conf=0.5, iou=0.4)
