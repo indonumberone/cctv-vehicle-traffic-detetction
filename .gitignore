@@ -1,0 +1,5 @@
+.venv
+.vscode
+yolov*
+video/output
+video/input
