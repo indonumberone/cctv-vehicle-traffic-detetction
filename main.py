@@ -229,7 +229,7 @@ if __name__ == "__main__":
     app = Main(
         'best_openvino_model', 
         'video/output/result.mp4', 
-        'video/input/input1.mp4', 
+        'video/input/input0.mp4', 
         global_cleanup_timeout=3600.0 
     )
     app.detect()
