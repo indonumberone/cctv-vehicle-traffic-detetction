@@ -209,13 +209,14 @@ class RTSPReconnector:
 
 
 class Main:
-    def __init__(self, model_path, video_output, video_input, global_cleanup_timeout=3600.0, target_fps=25):
+    def __init__(self, model_path, video_output, video_input, global_cleanup_timeout=3600.0, target_fps=25,retry=5):
         self.model_path = model_path
         self.video_output = video_output
         self.video_input = video_input
         self.global_cleanup_timeout = global_cleanup_timeout
         self.target_fps = target_fps
         self.frame_time = 1.0 / target_fps
+        self.retry  = retry
         
         self.LINES = [
             ((312, 359), (150, 418)), 
@@ -311,7 +312,7 @@ class Main:
     def detect(self):
         model = YOLO(self.model_path)
         
-        rtsp_conn = RTSPReconnector(self.video_input, max_retry=5, retry_delay=3)
+        rtsp_conn = RTSPReconnector(self.video_input, max_retry=self.retry, retry_delay=3)
         
         if not rtsp_conn.connect():
             print("Failed to connect to RTSP stream")
@@ -332,7 +333,7 @@ class Main:
         read_thread.start()
         process_thread.start()
 
-        print(f"🎬 Target FPS: {self.target_fps}, Frame time: {self.frame_time*1000:.1f}ms")
+  
         self.last_display_time = time.time()
         frame_count = 0
         last_frame_time = time.time()
@@ -405,12 +406,6 @@ class Main:
         rtsp_conn.release()
         out.release()
         cv2.destroyAllWindows()
-        
-        print(f"\n📊 Statistics:")
-        print(f"Total frames: {frame_count}")
-        print(f"Reconnections: {rtsp_conn.reconnect_count}")
-        print(f"Avg processing FPS: {avg_proc_fps:.1f}")
-        print(f"Final counts: {dict(counter.get_counts())}")
 
 
 if __name__ == "__main__":
@@ -419,6 +414,7 @@ if __name__ == "__main__":
         'video/output/result.mp4', 
         'rtsp://admin:tri@2024@41.216.190.93:554/Streaming/Channels/101', 
         global_cleanup_timeout=3600.0,
-        target_fps=25  
+        target_fps=25,
+        retry=10
     )
     app.detect()
