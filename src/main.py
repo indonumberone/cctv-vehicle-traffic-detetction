@@ -159,12 +159,26 @@ class Main:
         self.stop_event = threading.Event()
         
     def read_frames(self, cap):
+        """Baca frame dengan reconnection handling"""
+        consecutive_failures = 0
+        max_failures = 50
+        
         while not self.stop_event.is_set():
             if self.frame_queue.qsize() < 30:
                 ret, frame = cap.read()
                 if not ret:
-                    self.stop_event.set()
-                    break
+                    consecutive_failures += 1
+                    print(f"Failed to read frame ({consecutive_failures}/{max_failures})")
+                    
+                    if consecutive_failures >= max_failures:
+                        print("Max failures reached. Stopping...")
+                        self.stop_event.set()
+                        break
+                    
+                    time.sleep(0.1)
+                    continue
+                
+                consecutive_failures = 0  # Reset jika berhasil
                 timestamp = time.time()
                 self.frame_queue.put((frame, timestamp))
             else:
@@ -186,18 +200,48 @@ class Main:
 
     def detect(self):
         model = YOLO(self.model_path)
+        
+        # Setup capture dengan optimasi RTSP
         cap = cv2.VideoCapture(self.video_input)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer untuk real-time
+        
+        if not cap.isOpened():
+            print("ERROR: Cannot connect to video source!")
+            return
+        
+        # Ambil FPS asli dari stream
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        # Gunakan FPS asli, jika gagal gunakan 25
+        output_fps = fps if fps > 0 else 25.0
+        
+        print(f"Video Info:")
+        print(f"  Resolution: {width}x{height}")
+        print(f"  FPS: {output_fps}")
+        print(f"  Source: {self.video_input}")
+        
         counter = LineCrossingCounter(self.LINES, global_cleanup_timeout=self.global_cleanup_timeout)
         processor = FrameProcessor(model, counter, model.names, self.CLASSES_TO_TRACK)
         fps_meter = FPSMeter(buffer_size=60)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        out = cv2.VideoWriter(self.video_output, cv2.VideoWriter_fourcc(*'mp4v'), 25, (width, height))
+        
+        # Gunakan FPS asli untuk output video
+        out = cv2.VideoWriter(
+            self.video_output, 
+            cv2.VideoWriter_fourcc(*'mp4v'), 
+            output_fps,  # FPS asli dari stream
+            (width, height)
+        )
 
         read_thread = threading.Thread(target=self.read_frames, args=(cap,))
         process_thread = threading.Thread(target=self.process_frames, args=(processor,))
         read_thread.start()
         process_thread.start()
+
+        print(f"\nStarted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("Auto reset daily at 00:00")
+        print("Press ESC to stop\n")
 
         while not self.stop_event.is_set() or not self.result_queue.empty():
             if self.result_queue.empty():
@@ -214,6 +258,11 @@ class Main:
 
             avg_proc_fps = fps_meter.get_avg_processing_fps()
             avg_real_fps = fps_meter.get_avg_real_fps()
+
+            # Tampilkan info stream
+            current_time = datetime.now().strftime('%H:%M:%S')
+            cv2.putText(frame, current_time, (width - 150, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
             y_pos = 85
             for class_name, count in counter.get_counts().items():
@@ -233,11 +282,14 @@ class Main:
                 self.stop_event.set()
                 break
 
+        print("\nStopping threads...")
         read_thread.join()
         process_thread.join()
         cap.release()
         out.release()
         cv2.destroyAllWindows()
+        
+        print(f"Final counts: {dict(counter.get_counts())}")
 
 if __name__ == "__main__":
     app = Main(
