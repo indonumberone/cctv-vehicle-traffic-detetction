@@ -1,5 +1,5 @@
 .venv
 .vscode
-yolov*
-video/output
-video/input
+.env
+__pycache__/
+*.pyc
