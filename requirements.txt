@@ -1,1 +1,4 @@
 ultralytics
+supervision
+python-dotenv
+poetry
