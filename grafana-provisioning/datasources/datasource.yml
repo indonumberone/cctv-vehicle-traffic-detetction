@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: influx_pengmas
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: pengmas
+      defaultBucket: vehicle_counting
+      tlsSkipVerify: true
+    secureJsonData:
+      token: tokenrahasia
+    secureJsonFields:
+      token: true
