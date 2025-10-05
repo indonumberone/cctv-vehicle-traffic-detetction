@@ -1,4 +1,4 @@
-from .lib import FPSMeter, FrameProcessor, LineCrossingCounter, RTSPReconnector
+from .lib import FPSMeter, FrameProcessor, LineCrossingCounter, RTSPReconnector, InfluxDBLogger
 import cv2
 from ultralytics import YOLO
 from collections import defaultdict, deque
@@ -10,9 +10,17 @@ import queue
 from dotenv import load_dotenv
 load_dotenv()
 
+# RTSP and InfluxDB environment variables
 rtsp_url = os.getenv("RTSP_URL")
+influxdb_url = os.getenv("INFLUXDB_URL", "http://localhost:8086")
+influxdb_token = os.getenv("INFLUXDB_INIT_ADMIN_TOKEN")
+influxdb_org = os.getenv("INFLUXDB_INIT_ORG")
+influxdb_bucket = os.getenv("INFLUXDB_INIT_BUCKET", "vehicle_counting")
+location_name = os.getenv("LOCATION_NAME", "camera1")
+
 class Main:
-    def __init__(self, model_path, video_output, video_input, global_cleanup_timeout=3600.0, target_fps=25,retry=5):
+    def __init__(self, model_path, video_output, video_input, global_cleanup_timeout=3600.0, 
+                 target_fps=25, retry=5, use_influxdb=True):
         self.model_path = model_path
         self.video_output = video_output
         self.video_input = video_input
@@ -32,6 +40,8 @@ class Main:
         self.stop_event = threading.Event()
         self.reconnect_event = threading.Event()
         self.last_display_time = None
+        self.use_influxdb = use_influxdb
+        self.influxdb_logger = None
         
     def read_frames(self, rtsp_conn):
         """Thread untuk membaca frame dengan auto-reconnect"""
@@ -122,6 +132,28 @@ class Main:
             return
         
         counter = LineCrossingCounter(self.LINES, global_cleanup_timeout=self.global_cleanup_timeout)
+        
+        # Initialize InfluxDB logger if needed
+        if self.use_influxdb and influxdb_token:
+            try:
+                self.influxdb_logger = InfluxDBLogger(
+                    url=influxdb_url,
+                    token=influxdb_token,
+                    org=influxdb_org,
+                    bucket=influxdb_bucket,
+                    location_name=location_name
+                )
+                
+                # Set up callback for crossing events
+                counter.set_crossing_callback(self.influxdb_logger.log_crossing_event)
+                
+                # Start periodic logging (every 60 seconds)
+                self.influxdb_logger.start_periodic_logging(counter, interval=60)
+                print("Connected to InfluxDB")
+            except Exception as e:
+                print(f"Failed to connect to InfluxDB: {e}")
+                self.influxdb_logger = None
+        
         processor = FrameProcessor(model, counter, model.names, self.CLASSES_TO_TRACK)
         fps_meter = FPSMeter(buffer_size=60)
         
@@ -203,9 +235,17 @@ class Main:
                 self.stop_event.set()
                 break
 
+            # Log counts to InfluxDB when they change
+            if self.influxdb_logger:
+                current_counts = counter.get_counts()
+                self.influxdb_logger.log_counts(current_counts)
+
+        # Cleanup at the end
         self.stop_event.set()
         read_thread.join(timeout=2)
         process_thread.join(timeout=2)
+        if self.influxdb_logger:
+            self.influxdb_logger.close()
         rtsp_conn.release()
         out.release()
         cv2.destroyAllWindows()
@@ -219,7 +259,8 @@ def main():
         rtsp_url, 
         global_cleanup_timeout=3600.0,
         target_fps=25,
-        retry=10
+        retry=10,
+        use_influxdb=True  # Set to False if you don't want to use InfluxDB
     )
     app.detect()
 

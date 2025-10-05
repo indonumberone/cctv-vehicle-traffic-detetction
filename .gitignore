@@ -1,6 +1,7 @@
 .venv
 .vscode
 .env
-__pycache__/
 *.pyc
 video/
+__pycache__/
+influxdb-data/

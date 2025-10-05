@@ -2,8 +2,6 @@ from collections import defaultdict, deque
 import time
 from datetime import datetime
 
-
-
 class LineCrossingCounter:
     def __init__(self, lines, global_cleanup_timeout=3600.0):
         self.lines = lines
@@ -14,6 +12,7 @@ class LineCrossingCounter:
         self.last_reset_day = datetime.now().day
         self.global_cleanup_timeout = global_cleanup_timeout  
         self.global_crossed_timestamps = {}  
+        self.crossing_callback = None
 
     def update(self, track_id, class_name, center):
         current_time = time.time()
@@ -46,6 +45,10 @@ class LineCrossingCounter:
                     if track_id not in self.crossed_ids_per_line[i]:
                         self.crossed_ids_per_line[i].add(track_id)
                         print(f"{class_name} ID {track_id} crossed line {i+1}")
+                        
+                        # Call the callback if it exists
+                        if hasattr(self, 'crossing_callback') and self.crossing_callback:
+                            self.crossing_callback(class_name, track_id, i+1)
                         
                         if track_id not in self.global_crossed_ids:
                             self.global_crossed_ids.add(track_id)
@@ -80,3 +83,8 @@ class LineCrossingCounter:
     def get_line_crossings(self):
         return {f"Line {i+1}": len(crossed_ids) 
                 for i, crossed_ids in enumerate(self.crossed_ids_per_line)}
+
+    def set_crossing_callback(self, callback):
+        """Set a callback function to be called when a crossing happens
+        The callback will be called with (class_name, track_id, line_id)"""
+        self.crossing_callback = callback
