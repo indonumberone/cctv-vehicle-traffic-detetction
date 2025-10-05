@@ -2,7 +2,7 @@
 .vscode
 .env
 *.pyc
-video/
+video/*
 __pycache__/*
 influxdb-data/*
 grafana-data/*
