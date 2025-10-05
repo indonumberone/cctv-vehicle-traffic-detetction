@@ -6,4 +6,4 @@ video/*
 __pycache__/*
 influxdb-data/*
 grafana-data/*
-grafana-provisioning/*
+grafana-provisioning/*video/output/*.mp4
