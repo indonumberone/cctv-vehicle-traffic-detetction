@@ -1,10 +1,17 @@
-from flask import Flask, render_template, send_from_directory, Response
+from flask import Flask, render_template, send_from_directory, Response, jsonify
 import os
+import json
+import time
 
 app = Flask(__name__)
 
-# Path ke folder output yang berisi HLS files
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
+
+fps_data = {
+    'current_fps': 0,
+    'target_fps': 25,
+    'last_update': time.time()
+}
 
 @app.route('/')
 def index():
@@ -15,7 +22,6 @@ def index():
 def serve_hls(filename):
     """Serve HLS files (playlist.m3u8 dan segment .ts files)"""
     try:
-        # Set correct MIME types untuk HLS
         if filename.endswith('.m3u8'):
             mimetype = 'application/vnd.apple.mpegurl'
         elif filename.endswith('.ts'):
@@ -27,15 +33,30 @@ def serve_hls(filename):
     except Exception as e:
         return Response(f"Error: {str(e)}", status=404)
 
-@app.route('/about')
-def about():
-    """Halaman about"""
-    return render_template('about.html')
-
-@app.route('/status')
-def status():
-    """Halaman status"""
-    return render_template('status.html')
+@app.route('/api/stats')
+def get_stats():
+    """API endpoint untuk mendapatkan statistik real-time"""
+    try:
+        # Baca stats dari file jika ada (HLSStreamer menyimpan stats)
+        stats_file = os.path.join(OUTPUT_DIR, 'stream_stats.json')
+        
+        if os.path.exists(stats_file):
+            with open(stats_file, 'r') as f:
+                stats = json.load(f)
+                fps_data['current_fps'] = stats.get('fps', 0)
+                fps_data['target_fps'] = stats.get('target_fps', 25)
+                fps_data['last_update'] = time.time()
+                return jsonify(stats)
+        else:
+            # Return default data jika file tidak ada
+            return jsonify({
+                'fps': fps_data['current_fps'],
+                'target_fps': fps_data['target_fps'],
+                'status': 'no_data',
+                'last_update': fps_data['last_update']
+            })
+    except Exception as e:
+        return jsonify({'error': str(e), 'fps': 0}), 500
 
 if __name__ == '__main__':
     # Pastikan folder output ada

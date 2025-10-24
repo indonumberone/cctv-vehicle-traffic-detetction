@@ -4,6 +4,7 @@ import threading
 import queue
 import os
 import time
+import json
 from pathlib import Path
 
 
@@ -31,12 +32,15 @@ class HLSStreamer:
         self.frames_written = 0
         self.frames_dropped = 0
         self.last_log_time = time.time()
+        self.current_fps = 0
+        self.fps_update_time = time.time()
+        self.fps_frame_count = 0
         
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         
     def start(self):
         if self.is_running:
-            print("⚠️  HLS streaming already running")
+            print("HLS streaming already running")
             return False
             
         # Clean old segments
@@ -51,12 +55,12 @@ class HLSStreamer:
         '-f', 'rawvideo',
         '-pix_fmt', 'bgr24',
         '-s', f'{self.width}x{self.height}',
-        '-r', 25,
+        '-r', str(self.fps),
         '-i', '-',
 
         # Video options
         '-c:v', 'libx264',
-        '-b:v', '500k',
+        '-b:v', self.bitrate,
         '-preset', 'veryfast',
         '-tune', 'zerolatency',
         '-g', str(self.fps * 2),  # Keyframe interval
@@ -79,19 +83,42 @@ class HLSStreamer:
 
         
         try:
-            # Untuk debugging, simpan stderr ke file
             stderr_log = os.path.join(self.output_dir, 'ffmpeg_error.log')
-            self.stderr_file = open(stderr_log, 'w')
+            self.stderr_file = open(stderr_log, 'w', buffering=1) 
+            
+            print(f"tarting FFmpeg with command:")
+            print(f"   {' '.join(ffmpeg_cmd)}")
             
             self.ffmpeg_process = subprocess.Popen(
                 ffmpeg_cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
-                stderr=self.stderr_file,  # Log errors untuk debugging
+                stderr=subprocess.PIPE, 
                 bufsize=10**8
             )
             
+            time.sleep(0.5)
+            poll_result = self.ffmpeg_process.poll()
+            
+            if poll_result is not None:
+                # FFmpeg sudah mati
+                stderr_output = self.ffmpeg_process.stderr.read().decode('utf-8', errors='ignore')
+                self.stderr_file.write(stderr_output)
+                self.stderr_file.flush()
+                print(f"FFmpeg failed to start (exit code: {poll_result})")
+                print(f"   Check {stderr_log} for details")
+                if stderr_output:
+                    print(f"   Error: {stderr_output[:200]}")
+                return False
+            
             self.is_running = True
+            
+            # Start stderr monitoring thread
+            stderr_thread = threading.Thread(
+                target=self._monitor_stderr,
+                daemon=True
+            )
+            stderr_thread.start()
             
             # Start streaming thread
             self.streaming_thread = threading.Thread(
@@ -103,6 +130,8 @@ class HLSStreamer:
             print(f"✅ HLS streaming started: {playlist_file}")
             print(f"   Resolution: {self.width}x{self.height} @ {self.fps}fps")
             print(f"   Bitrate: {self.bitrate}")
+            print(f"   Segment time: {self.segment_time}s")
+            print(f"   FFmpeg PID: {self.ffmpeg_process.pid}")
             return True
             
         except FileNotFoundError:
@@ -113,9 +142,31 @@ class HLSStreamer:
             print(f"❌ Failed to start HLS streaming: {e}")
             return False
     
+    def _monitor_stderr(self):
+        """Monitor FFmpeg stderr output"""
+        if not self.ffmpeg_process or not self.ffmpeg_process.stderr:
+            return
+        
+        try:
+            for line in iter(self.ffmpeg_process.stderr.readline, b''):
+                if not line:
+                    break
+                decoded_line = line.decode('utf-8', errors='ignore').strip()
+                if self.stderr_file:
+                    self.stderr_file.write(decoded_line + '\n')
+                    self.stderr_file.flush()
+                
+                # Print critical errors
+                if 'error' in decoded_line.lower() or 'failed' in decoded_line.lower():
+                    print(f"⚠️  FFmpeg: {decoded_line}")
+        except Exception as e:
+            print(f"Error monitoring FFmpeg stderr: {e}")
+    
     def _streaming_worker(self):
         """Worker thread to write frames to FFmpeg - OPTIMIZED"""
         local_frames_written = 0
+        
+        print("🎬 Streaming worker started, waiting for frames...")
         
         while not self.stop_event.is_set():
             try:
@@ -133,12 +184,26 @@ class HLSStreamer:
                         self.ffmpeg_process.stdin.write(frame.tobytes())
                         local_frames_written += 1
                         self.frames_written = local_frames_written
+                        self.fps_frame_count += 1
                         
-                        # Log progress setiap 250 frames (reduced logging)
+                        # Log first frame
+                        if local_frames_written == 1:
+                            print(f"✅ First frame written to FFmpeg!")
+                        
+                        # Calculate FPS and update stats file
                         current_time = time.time()
-                        if current_time - self.last_log_time >= 10.0:  # Every 10 seconds
+                        time_diff = current_time - self.fps_update_time
+                        if time_diff >= 1.0:  # Update FPS every second
+                            self.current_fps = self.fps_frame_count / time_diff
+                            self.fps_frame_count = 0
+                            self.fps_update_time = current_time
+                            self._save_stats_to_file()
+                        
+                        # Log progress setiap 10 detik
+                        if current_time - self.last_log_time >= 10.0:
                             queue_size = self.frame_queue.qsize()
                             print(f"📹 HLS: {local_frames_written} frames | "
+                                  f"FPS: {self.current_fps:.1f} | "
                                   f"Queue: {queue_size}/60 | "
                                   f"Dropped: {self.frames_dropped}")
                             self.last_log_time = current_time
@@ -168,13 +233,19 @@ class HLSStreamer:
             bool: True if frame was queued, False if dropped
         """
         if not self.is_running:
+            # Log only first time
+            if not hasattr(self, '_not_running_logged'):
+                print("⚠️  HLS write_frame called but streaming not running!")
+                self._not_running_logged = True
             return False
         
         try:
-            # NON-BLOCKING put - drop frame jika queue penuh
-            # IMPORTANT: Tidak pakai .copy() di sini untuk speed!
-            # Frame akan di-copy di dalam thread worker jika perlu resize
             self.frame_queue.put_nowait(frame)
+            
+            # Log first successful queue
+            if self.frame_queue.qsize() == 1 and self.frames_written == 0:
+                print(f"✅ First frame queued! Shape: {frame.shape}")
+            
             return True
         except queue.Full:
             # Skip frame jika queue penuh
@@ -210,24 +281,24 @@ class HLSStreamer:
         if self.streaming_thread and self.streaming_thread.is_alive():
             self.streaming_thread.join(timeout=3)
         
-        # Terminate FFmpeg
-        if self.ffmpeg_process:
-            try:
-                self.ffmpeg_process.terminate()
-                self.ffmpeg_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.ffmpeg_process.kill()
-            except:
-                pass
+        # # Terminate FFmpeg
+        # if self.ffmpeg_process:
+        #     try:
+        #         self.ffmpeg_process.terminate()
+        #         self.ffmpeg_process.wait(timeout=5)
+        #     except subprocess.TimeoutExpired:
+        #         self.ffmpeg_process.kill()
+        #     except:
+        #         pass
         
-        # Close stderr file
-        if self.stderr_file:
-            try:
-                self.stderr_file.close()
-            except:
-                pass
+        # # Close stderr file
+        # if self.stderr_file:
+        #     try:
+        #         self.stderr_file.close()
+        #     except:
+        #         pass
         
-        print(f"✅ HLS stopped. Total frames: {self.frames_written}, Dropped: {self.frames_dropped}")
+        # print(f"✅ HLS stopped. Total frames: {self.frames_written}, Dropped: {self.frames_dropped}")
     
     def get_stats(self):
         """Get streaming statistics"""
@@ -238,11 +309,23 @@ class HLSStreamer:
             'frames_dropped': self.frames_dropped,
             'output_dir': self.output_dir,
             'resolution': f"{self.width}x{self.height}",
-            'fps': self.fps,
+            'fps': round(self.current_fps, 1),
+            'target_fps': self.fps,
             'bitrate': self.bitrate,
             'segment_time': self.segment_time,
             'playlist_size': self.playlist_size
         }
+    
+    def _save_stats_to_file(self):
+        """Save current stats to JSON file for web API"""
+        try:
+            stats_file = os.path.join(self.output_dir, 'stream_stats.json')
+            stats = self.get_stats()
+            with open(stats_file, 'w') as f:
+                json.dump(stats, f)
+        except Exception as e:
+            # Silent fail - tidak kritis
+            pass
     
     def __enter__(self):
         """Context manager entry"""

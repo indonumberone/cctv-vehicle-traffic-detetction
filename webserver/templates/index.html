@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rekaman Live CCTV - Dashboard</title>
+    <title>Rekaman Live CCTV - SmartPJU Monitor</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -12,350 +12,161 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
     />
-    <style>
-      body {
-        background-color: #f8f9fa;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
-
-      .navbar {
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .navbar-brand {
-        font-weight: 600;
-        font-size: 1.3rem;
-      }
-
-      .page-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2rem 0;
-        margin-bottom: 2rem;
-        border-radius: 0.5rem;
-      }
-
-      .location-badge {
-        background-color: rgba(255, 255, 255, 0.2);
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .video-card {
-        background: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-      }
-
-      #video-container {
-        position: relative;
-        width: 100%;
-        background: #000;
-        border-radius: 0.5rem;
-        overflow: hidden;
-      }
-
-      #video-player {
-        width: 100%;
-        height: auto;
-        display: block;
-      }
-
-      .video-info {
-        margin-top: 1rem;
-        padding: 1rem;
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-      }
-
-      .status-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: #28a745;
-        animation: pulse 2s infinite;
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
-      }
-
-      .error-message {
-        background-color: #f8d7da;
-        color: #721c24;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 1px solid #f5c6cb;
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
   </head>
   <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="/">
-          <i class="bi bi-camera-video-fill"></i> CCTV Monitoring
-        </a>
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link active" href="/">
-                <i class="bi bi-house-fill"></i> Dashboard
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/status">
-                <i class="bi bi-activity"></i> Status
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/about">
-                <i class="bi bi-info-circle-fill"></i> About
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <!-- Hamburger Menu Button -->
+    <button class="hamburger-btn" id="hamburger-btn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-      <!-- Page Header -->
-      <div class="page-header">
-        <div class="container">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h1 class="mb-2">
-                <i class="bi bi-broadcast"></i> Rekaman Live CCTV
-              </h1>
-              <p class="mb-0">
-                Pantau rekaman live kamera CCTV secara realtime.
-              </p>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="main-container">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <i class="bi bi-lightning-charge-fill"></i>
+          <h4>SmartPJU Monitor</h4>
+        </div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/" class="nav-link">
+              <i class="bi bi-grid-fill"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/cctv" class="nav-link active">
+              <i class="bi bi-camera-video-fill"></i>
+              <span>CCTV</span>
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Left Section - Video -->
+        <div class="video-section">
+          <!-- Top Bar -->
+          <div class="top-bar">
+            <div class="location-info">
+              <i class="bi bi-geo-alt-fill"></i>
+              PR52+GPQ, Jl. Mariang Emas, Keputih, Kec. Sukolilo, Surabaya, Jawa
+              Timur 60111
+              <br />
+              <small>Lat: -7.29116 | Long: 112.8018236</small>
             </div>
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-              <div class="location-badge">
-                <i class="bi bi-geo-alt-fill"></i>
-                <span>PJU II, Bandung</span>
+          </div>
+
+          <!-- Page Header -->
+          <div class="page-header">
+            <h1><i class="bi bi-broadcast"></i> Rekaman Live CCTV</h1>
+            <p>Pantau rekaman live kamera CCTV secara realtime.</p>
+          </div>
+
+          <!-- Video Card -->
+          <div class="video-card">
+            <div id="video-container">
+              <video id="video-player" controls autoplay muted>
+                <source
+                  src="/output/playlist.m3u8"
+                  type="application/x-mpegURL"
+                />
+                Browser Anda tidak mendukung video tag.
+              </video>
+            </div>
+
+            <div class="video-info">
+              <div class="info-item">
+                <small>Stream URL:</small>
+                <div class="value"><code>/output/playlist.m3u8</code></div>
+              </div>
+              <div class="info-item">
+                <small>Format:</small>
+                <div class="value">HLS (HTTP Live Streaming)</div>
+              </div>
+              <div class="info-item">
+                <small>Status:</small>
+                <div id="stream-status">
+                  <span class="status-badge online">
+                    <span class="status-dot"></span>
+                    Connected
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Video Player Card -->
-      <div class="video-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">
-            <i class="bi bi-play-circle-fill"></i> Live Stream
-          </h5>
-          <div class="status-indicator">
-            <span class="status-dot"></span>
-            <span class="text-success">Live</span>
+            <div id="error-container" class="error-message d-none">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <strong>Error:</strong> <span id="error-message"></span>
+            </div>
           </div>
         </div>
 
-        <div id="video-container">
-          <video id="video-player" controls autoplay muted>
-            <source src="/output/playlist.m3u8" type="application/x-mpegURL" />
-            Browser Anda tidak mendukung video tag.
-          </video>
-        </div>
-
-        <div class="video-info">
-          <div class="row">
-            <div class="col-md-4">
-              <small class="text-muted">Stream URL:</small>
-              <div><code>/output/playlist.m3u8</code></div>
-            </div>
-            <div class="col-md-4">
-              <small class="text-muted">Format:</small>
-              <div>HLS (HTTP Live Streaming)</div>
-            </div>
-            <div class="col-md-4">
-              <small class="text-muted">Status:</small>
-              <div id="stream-status">
-                <span class="badge bg-success">Connected</span>
+        <!-- Right Section - Stats Sidebar -->
+        <div class="stats-sidebar">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <i class="bi bi-speedometer2"></i>
+              <div>
+                <h6>FPS STREAMING</h6>
               </div>
             </div>
+            <div class="value" id="fps">-- fps</div>
+            <div class="subvalue">
+              Target: <span id="target-fps">25</span> fps
+            </div>
           </div>
-        </div>
 
-        <div id="error-container" class="error-message d-none">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <strong>Error:</strong> <span id="error-message"></span>
-        </div>
-      </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <i class="bi bi-camera-video"></i>
+              <div>
+                <h6>STATUS KAMERA</h6>
+              </div>
+            </div>
+            <div class="value" style="color: #28a745; font-size: 1.5rem">
+              Active
+            </div>
+            <div class="subvalue">Stream berjalan normal</div>
+          </div>
 
-      <!-- Additional Info -->
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <i
-                class="bi bi-camera-video"
-                style="font-size: 2rem; color: #667eea"
-              ></i>
-              <h6 class="mt-2">Camera Status</h6>
-              <p class="text-success mb-0"><strong>Active</strong></p>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <i class="bi bi-clock-history"></i>
+              <div>
+                <h6>UPTIME</h6>
+              </div>
             </div>
+            <div class="value" style="font-size: 1.8rem" id="uptime">
+              00:00:00
+            </div>
+            <div class="subvalue">Waktu streaming aktif</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <i class="bi bi-display"></i>
+              <div>
+                <h6>RESOLUSI</h6>
+              </div>
+            </div>
+            <div class="value" style="font-size: 1.5rem">1920x1080</div>
+            <div class="subvalue">Full HD</div>
           </div>
         </div>
-        <div class="col-md-4 mb-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <i
-                class="bi bi-clock-history"
-                style="font-size: 2rem; color: #667eea"
-              ></i>
-              <h6 class="mt-2">Uptime</h6>
-              <p class="mb-0"><strong id="uptime">--:--:--</strong></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <i
-                class="bi bi-speedometer2"
-                style="font-size: 2rem; color: #667eea"
-              ></i>
-              <h6 class="mt-2">FPS</h6>
-              <p class="mb-0"><strong id="fps">-- fps</strong></p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-5 py-4 bg-dark text-white text-center">
-      <div class="container">
-        <p class="mb-0">
-          &copy; 2025 CCTV Monitoring System. All rights reserved.
-        </p>
-      </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script>
-      // HLS Video Player Setup
-      const video = document.getElementById("video-player");
-      const videoSource = "/output/playlist.m3u8";
-      const errorContainer = document.getElementById("error-container");
-      const errorMessage = document.getElementById("error-message");
-      const streamStatus = document.getElementById("stream-status");
-
-      function showError(msg) {
-        errorContainer.classList.remove("d-none");
-        errorMessage.textContent = msg;
-        streamStatus.innerHTML =
-          '<span class="badge bg-danger">Disconnected</span>';
-      }
-
-      function hideError() {
-        errorContainer.classList.add("d-none");
-        streamStatus.innerHTML =
-          '<span class="badge bg-success">Connected</span>';
-      }
-
-      // Check if HLS is natively supported (Safari, iOS)
-      if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = videoSource;
-        video.addEventListener("loadedmetadata", function () {
-          console.log("HLS stream loaded (native)");
-          hideError();
-        });
-        video.addEventListener("error", function () {
-          showError("Failed to load video stream (native player)");
-        });
-      }
-      // Use hls.js for other browsers
-      else if (Hls.isSupported()) {
-        const hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: true,
-          backBufferLength: 90,
-        });
-
-        hls.loadSource(videoSource);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          console.log("HLS manifest parsed");
-          hideError();
-          video.play().catch((e) => {
-            console.log("Autoplay prevented:", e);
-          });
-        });
-
-        hls.on(Hls.Events.ERROR, function (event, data) {
-          console.error("HLS Error:", data);
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                showError("Network error - attempting to recover...");
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                showError("Media error - attempting to recover...");
-                hls.recoverMediaError();
-                break;
-              default:
-                showError("Fatal error - cannot recover stream");
-                hls.destroy();
-                break;
-            }
-          }
-        });
-      } else {
-        showError("Browser tidak mendukung HLS streaming");
-      }
-
-      // Uptime counter
-      let uptimeSeconds = 0;
-      setInterval(() => {
-        uptimeSeconds++;
-        const hours = Math.floor(uptimeSeconds / 3600);
-        const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-        const seconds = uptimeSeconds % 60;
-        document.getElementById("uptime").textContent = `${String(
-          hours
-        ).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
-          seconds
-        ).padStart(2, "0")}`;
-      }, 1000);
-
-      // Simulate FPS (you can replace this with actual FPS data)
-      setInterval(() => {
-        const fps = Math.floor(Math.random() * 5) + 25; // Random between 25-30
-        document.getElementById("fps").textContent = `${fps} fps`;
-      }, 1000);
-    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   </body>
 </html>
