@@ -3,6 +3,7 @@
 .env
 *.pyc
 video/*
+video/input/*.mp4
 __pycache__/*
 influxdb-data/*
 grafana-data/*

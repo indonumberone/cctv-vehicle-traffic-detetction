@@ -29,7 +29,7 @@ def draw_line(event, x, y, flags, param):
             print(f"Garis dari {pt1} ke {pt2}")
 
 # Load video (bisa ganti dengan stream URL)
-video_path = "out_pens0.mp4"  # ganti path kamu di sini
+video_path = "/home/muqsith/pengmas/testing/video/input/input0.mp4"  # ganti path kamu di sini
 cap = cv2.VideoCapture(video_path)
 
 cv2.namedWindow("Video")

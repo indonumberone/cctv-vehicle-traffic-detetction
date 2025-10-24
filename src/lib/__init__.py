@@ -3,11 +3,12 @@ from .frameprosessor import FrameProcessor
 from .linecrossingcounter import LineCrossingCounter
 from .rtspreconnector import RTSPReconnector
 from .influxdblogger import InfluxDBLogger
-
+from .hlsstreamer import HLSStreamer
 __all__ = [
     'FPSMeter',
     'FrameProcessor', 
     'LineCrossingCounter',
     'RTSPReconnector',
-    'InfluxDBLogger'
+    'InfluxDBLogger',
+    'HLSStreamer'
 ]

@@ -1,4 +1,4 @@
-from .lib import FPSMeter, FrameProcessor, LineCrossingCounter, RTSPReconnector, InfluxDBLogger
+from .lib import FPSMeter, FrameProcessor, LineCrossingCounter, RTSPReconnector, InfluxDBLogger,HLSStreamer
 import cv2
 from ultralytics import YOLO
 from collections import defaultdict, deque
@@ -20,7 +20,7 @@ location_name = os.getenv("LOCATION_NAME", "camera1")
 
 class Main:
     def __init__(self, model_path, video_output, video_input, global_cleanup_timeout=3600.0, 
-                 target_fps=25, retry=5, use_influxdb=True):
+                 target_fps=25, retry=5, use_influxdb=True, outputdir='./output'):
         self.model_path = model_path
         self.video_output = video_output
         self.video_input = video_input
@@ -42,6 +42,15 @@ class Main:
         self.last_display_time = None
         self.use_influxdb = use_influxdb
         self.influxdb_logger = None
+        self.hls = HLSStreamer(
+            output_dir=outputdir,  
+            width=1920,
+            height=1080,
+            fps=25,
+            bitrate='5000k',
+            segment_time=2,
+        playlist_size=10
+    )
         
     def read_frames(self, rtsp_conn):
         """Thread untuk membaca frame dengan auto-reconnect"""
@@ -130,7 +139,8 @@ class Main:
         if not rtsp_conn.connect():
             print("Failed to connect to RTSP stream")
             return
-        
+        if self.hls.start():
+            print("HLS streaming started")
         counter = LineCrossingCounter(self.LINES, global_cleanup_timeout=self.global_cleanup_timeout)
         
         # Initialize InfluxDB logger if needed
@@ -226,6 +236,7 @@ class Main:
             
 
             cv2.imshow("Tracking", frame)
+            self.hls.write_frame(frame)
             out.write(frame)
             
             frame_count += 1
@@ -233,6 +244,7 @@ class Main:
             if cv2.waitKey(1) & 0xFF == 27:  # ESC
                 print("ESC pressed, stopping...")
                 self.stop_event.set()
+                self.hls.stop()
                 break
 
             # Log counts to InfluxDB when they change
