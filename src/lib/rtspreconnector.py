@@ -32,15 +32,28 @@ class RTSPReconnector:
         """Attempt to reconnect"""
         print(f"Reconnecting... (attempt {self.reconnect_count + 1}/{self.max_retry})")
         
-        for attempt in range(self.max_retry):
+        attempt = 0
+        
+        while True:
+            attempt += 1
             time.sleep(self.retry_delay)
             if self.connect():
                 self.reconnect_count += 1
+                print(f"Reconnected to RTSP stream (attempt {self.reconnect_count})")
                 return True
-            print(f"reconnect failed ({attempt + 1}/{self.max_retry})")
+            print(f"reconnect failed ({attempt}")
+            
         
-        print(f"Max reconnection attempts reached")
-        return False
+        
+        # for attempt in range(self.max_retry):
+        #     time.sleep(self.retry_delay)
+        #     if self.connect():
+        #         self.reconnect_count += 1
+        #         return True
+        #     print(f"reconnect failed ({attempt + 1}/{self.max_retry})")
+        
+        # print(f"Max reconnection attempts reached")
+        # return False
     
     def read(self):
         """Read frame with auto-reconnect on failure"""

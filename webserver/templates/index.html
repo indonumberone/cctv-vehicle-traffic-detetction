@@ -4,47 +4,194 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rekaman Live CCTV - SmartPJU Monitor</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
     />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#4a9eff",
+              dark: {
+                100: "#1a1f2e",
+                200: "#0f1419",
+              },
+              light: {
+                100: "#f5f7fa",
+                200: "#e4e9f0",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .status-dot-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      }
+
+      /* Light theme styles */
+      .light body {
+        @apply bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900;
+      }
+
+      .light nav {
+        @apply bg-white/95 border-gray-200;
+      }
+
+      .light aside {
+        @apply bg-white/95 border-gray-200;
+      }
+
+      .light .bg-dark-100\/80,
+      .light .bg-white\/5 {
+        @apply bg-white shadow-md;
+      }
+
+      .light .bg-dark-200\/95 {
+        @apply bg-white/95;
+      }
+
+      .light .text-gray-400 {
+        @apply text-gray-600;
+      }
+
+      .light .text-gray-200 {
+        @apply text-gray-900;
+      }
+
+      .light .text-white {
+        @apply text-gray-900;
+      }
+
+      .light .border-white\/10 {
+        @apply border-gray-200;
+      }
+
+      .light #hamburger-btn {
+        @apply bg-white/95 border-gray-200;
+      }
+
+      .light #hamburger-btn span {
+        @apply bg-primary;
+      }
+
+      .light #video-container {
+        @apply shadow-xl;
+      }
+    </style>
   </head>
-  <body>
-    <!-- Hamburger Menu Button -->
-    <button class="hamburger-btn" id="hamburger-btn">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
+  <body
+    class="bg-gradient-to-br from-dark-200 via-dark-100 to-dark-200 min-h-screen text-gray-200 transition-colors duration-300"
+  >
+    <!-- Navbar -->
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-dark-100/95 backdrop-blur-md border-b border-white/10"
+    >
+      <div class="w-full px-3 sm:px-4 lg:container lg:mx-auto">
+        <div class="flex items-center justify-between h-16">
+          <!-- Left side - Hamburger + Logo -->
+          <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
+            <!-- Hamburger Menu Button (Mobile Only) -->
+            <button
+              class="lg:hidden bg-white/5 border border-white/10 rounded-lg p-2 hover:bg-primary/20 hover:border-primary transition-all"
+              id="hamburger-btn"
+            >
+              <div class="w-5 h-4 flex flex-col justify-between">
+                <span
+                  class="block w-full h-0.5 bg-primary rounded transition-all duration-300"
+                ></span>
+                <span
+                  class="block w-full h-0.5 bg-primary rounded transition-all duration-300"
+                ></span>
+                <span
+                  class="block w-full h-0.5 bg-primary rounded transition-all duration-300"
+                ></span>
+              </div>
+            </button>
+
+            <!-- Logos -->
+            <img
+              src="{{ url_for('static', filename='img/PENS-LOGO.png') }}"
+              alt="PENS Logo"
+              class="h-8 sm:h-9 lg:h-10 w-auto"
+            />
+            <img
+              src="{{ url_for('static', filename='img/pemkot.png') }}"
+              alt="Pemkot Logo"
+              class="h-8 sm:h-9 lg:h-10 w-auto"
+            />
+            <div class="hidden md:block">
+              <h1 class="text-white text-lg font-semibold">SmartPJU Monitor</h1>
+              <p class="text-gray-400 text-xs">
+                Vehicle Traffic Detection System
+              </p>
+            </div>
+          </div>
+
+          <!-- Right side - Theme Toggle -->
+          <div class="flex items-center">
+            <button
+              id="theme-toggle"
+              class="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary transition-all"
+              title="Toggle Theme"
+            >
+              <i
+                class="bi bi-sun-fill text-lg sm:text-xl text-yellow-400 hidden"
+                id="light-icon"
+              ></i>
+              <i
+                class="bi bi-moon-stars-fill text-lg sm:text-xl text-blue-400"
+                id="dark-icon"
+              ></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
 
     <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div
+      class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"
+      id="sidebar-overlay"
+    ></div>
 
-    <div class="main-container">
+    <div class="flex min-h-screen">
       <!-- Sidebar -->
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-          <i class="bi bi-lightning-charge-fill"></i>
-          <h4>SmartPJU Monitor</h4>
+      <aside
+        class="fixed lg:static w-64 h-screen bg-dark-200/95 border-r border-white/10 py-8 pt-20 lg:pt-20 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 overflow-y-auto"
+        id="sidebar"
+      >
+        <div class="px-6 mb-8 flex items-center gap-3">
+          <img
+            src="{{ url_for('static', filename='img/Logo Si PJU.png') }}"
+            alt="Logo PJU"
+            class="h-8 w-auto"
+          />
+          <h4 class="text-white text-xl font-semibold">SmartPJU Monitor</h4>
         </div>
-        <ul class="nav-menu">
-          <li class="nav-item">
-            <a href="/" class="nav-link">
-              <i class="bi bi-grid-fill"></i>
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="/"
+              class="flex items-center gap-4 px-6 py-3.5 text-gray-400 hover:bg-primary/10 hover:text-primary transition-all border-l-3 border-transparent hover:border-primary"
+            >
+              <i class="bi bi-grid-fill text-xl w-6"></i>
               <span>Dashboard</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a href="/cctv" class="nav-link active">
-              <i class="bi bi-camera-video-fill"></i>
+          <li>
+            <a
+              href="/cctv"
+              class="flex items-center gap-4 px-6 py-3.5 bg-primary/15 text-primary border-l-3 border-primary"
+            >
+              <i class="bi bi-camera-video-fill text-xl w-6"></i>
               <span>CCTV</span>
             </a>
           </li>
@@ -52,115 +199,144 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="main-content">
-        <!-- Left Section - Video -->
-        <div class="video-section">
-          <!-- Top Bar -->
-          <div class="top-bar">
-            <div class="location-info">
-              <i class="bi bi-geo-alt-fill"></i>
-              PR52+GPQ, Jl. Mariang Emas, Keputih, Kec. Sukolilo, Surabaya, Jawa
-              Timur 60111
-              <br />
-              <small>Lat: -7.29116 | Long: 112.8018236</small>
-            </div>
-          </div>
+      <main class="flex-1 p-8 pt-24 lg:ml-0">
+        <div class="flex flex-col xl:flex-row gap-8">
+          <!-- Left Section - Video -->
+          <div class="flex-1 min-w-0">
+            <!-- Top Bar - Header and Location -->
+            <div class="mb-8">
+              <div
+                class="flex flex-col md:flex-row md:items-start md:justify-between gap-4"
+              >
+                <!-- Page Header - Left -->
+                <div>
+                  <h1 class="text-3xl font-semibold text-white mb-2">
+                    Rekaman Live CCTV
+                  </h1>
+                  <p class="text-gray-400">
+                    Pantau rekaman live kamera CCTV secara realtime.
+                  </p>
+                </div>
 
-          <!-- Page Header -->
-          <div class="page-header">
-            <h1><i class="bi bi-broadcast"></i> Rekaman Live CCTV</h1>
-            <p>Pantau rekaman live kamera CCTV secara realtime.</p>
-          </div>
-
-          <!-- Video Card -->
-          <div class="video-card">
-            <div id="video-container">
-              <video id="video-player" controls autoplay muted>
-                <source
-                  src="/output/playlist.m3u8"
-                  type="application/x-mpegURL"
-                />
-                Browser Anda tidak mendukung video tag.
-              </video>
-            </div>
-
-            <div class="video-info">
-              <div class="info-item">
-                <small>Stream URL:</small>
-                <div class="value"><code>/output/playlist.m3u8</code></div>
-              </div>
-              <div class="info-item">
-                <small>Format:</small>
-                <div class="value">HLS (HTTP Live Streaming)</div>
-              </div>
-              <div class="info-item">
-                <small>Status:</small>
-                <div id="stream-status">
-                  <span class="status-badge online">
-                    <span class="status-dot"></span>
-                    Connected
-                  </span>
+                <!-- Location - Right -->
+                <div
+                  class="bg-white/5 p-4 rounded-lg border border-white/10 text-sm md:max-w-md"
+                >
+                  <i class="bi bi-geo-alt-fill text-primary mr-2"></i>
+                  PR52+GPQ, Jl. Marina Emas, Keputih, Kec. Sukolilo, Surabaya,
+                  Jawa Timur 60111
+                  <br />
+                  <small class="text-gray-400"
+                    >Lat: -7.29116 | Long: 112.8018236</small
+                  >
                 </div>
               </div>
             </div>
 
-            <div id="error-container" class="error-message d-none">
-              <i class="bi bi-exclamation-triangle-fill"></i>
-              <strong>Error:</strong> <span id="error-message"></span>
-            </div>
-          </div>
-        </div>
+            <!-- Video Card -->
+            <div
+              class="bg-dark-100/80 border border-white/10 rounded-2xl p-6 shadow-2xl"
+            >
+              <div
+                id="video-container"
+                class="relative w-full bg-black rounded-xl overflow-hidden aspect-video"
+              >
+                <video
+                  id="video-player"
+                  controls
+                  autoplay
+                  muted
+                  class="w-full h-full"
+                >
+                  <source
+                    src="/output/playlist.m3u8"
+                    type="application/x-mpegURL"
+                  />
+                  Browser Anda tidak mendukung video tag.
+                </video>
+              </div>
 
-        <!-- Right Section - Stats Sidebar -->
-        <div class="stats-sidebar">
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <i class="bi bi-speedometer2"></i>
-              <div>
-                <h6>FPS STREAMING</h6>
+              <div
+                id="error-container"
+                class="hidden mt-4 bg-red-500/10 text-red-500 p-4 rounded-lg border border-red-500/30"
+              >
+                <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                <strong>Error:</strong> <span id="error-message"></span>
               </div>
             </div>
-            <div class="value" id="fps">-- fps</div>
-            <div class="subvalue">
-              Target: <span id="target-fps">25</span> fps
-            </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <i class="bi bi-camera-video"></i>
-              <div>
-                <h6>STATUS KAMERA</h6>
+          <!-- Right Section - Stats Sidebar -->
+          <div class="w-full xl:w-96 flex flex-col gap-6">
+            <div
+              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
+            >
+              <div class="flex items-center gap-4 mb-4">
+                <i class="bi bi-speedometer2 text-3xl text-primary"></i>
+                <div>
+                  <h6 class="text-gray-400 text-sm font-normal">
+                    FPS STREAMING
+                  </h6>
+                </div>
+              </div>
+              <div class="text-white text-3xl font-semibold mt-2" id="fps">
+                -- fps
+              </div>
+              <div class="text-gray-400 text-sm mt-1">
+                Target: <span id="target-fps">25</span> fps
               </div>
             </div>
-            <div class="value" style="color: #28a745; font-size: 1.5rem">
-              Active
-            </div>
-            <div class="subvalue">Stream berjalan normal</div>
-          </div>
 
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <i class="bi bi-clock-history"></i>
-              <div>
-                <h6>UPTIME</h6>
+            <div
+              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
+            >
+              <div class="flex items-center gap-4 mb-4">
+                <i class="bi bi-camera-video text-3xl text-primary"></i>
+                <div>
+                  <h6 class="text-gray-400 text-sm font-normal">
+                    STATUS KAMERA
+                  </h6>
+                </div>
+              </div>
+              <div class="text-green-500 text-2xl font-semibold mt-2">
+                Active
+              </div>
+              <div class="text-gray-400 text-sm mt-1">
+                Stream berjalan normal
               </div>
             </div>
-            <div class="value" style="font-size: 1.8rem" id="uptime">
-              00:00:00
-            </div>
-            <div class="subvalue">Waktu streaming aktif</div>
-          </div>
 
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <i class="bi bi-display"></i>
-              <div>
-                <h6>RESOLUSI</h6>
+            <div
+              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
+            >
+              <div class="flex items-center gap-4 mb-4">
+                <i class="bi bi-clock-history text-3xl text-primary"></i>
+                <div>
+                  <h6 class="text-gray-400 text-sm font-normal">UPTIME</h6>
+                </div>
+              </div>
+              <div class="text-white text-3xl font-semibold mt-2" id="uptime">
+                00:00:00
+              </div>
+              <div class="text-gray-400 text-sm mt-1">
+                Waktu streaming aktif
               </div>
             </div>
-            <div class="value" style="font-size: 1.5rem">1920x1080</div>
-            <div class="subvalue">Full HD</div>
+
+            <div
+              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
+            >
+              <div class="flex items-center gap-4 mb-4">
+                <i class="bi bi-display text-3xl text-primary"></i>
+                <div>
+                  <h6 class="text-gray-400 text-sm font-normal">RESOLUSI</h6>
+                </div>
+              </div>
+              <div class="text-white text-2xl font-semibold mt-2">
+                1920x1080
+              </div>
+              <div class="text-gray-400 text-sm mt-1">Full HD</div>
+            </div>
           </div>
         </div>
       </main>

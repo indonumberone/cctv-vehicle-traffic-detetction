@@ -1,3 +1,38 @@
+// Theme Toggle Functionality
+const themeToggle = document.getElementById("theme-toggle");
+const lightIcon = document.getElementById("light-icon");
+const darkIcon = document.getElementById("dark-icon");
+const htmlElement = document.documentElement;
+
+// Load theme from localStorage
+const currentTheme = localStorage.getItem("theme") || "dark";
+if (currentTheme === "light") {
+  htmlElement.classList.add("light");
+  lightIcon.classList.remove("hidden");
+  darkIcon.classList.add("hidden");
+} else {
+  htmlElement.classList.remove("light");
+  lightIcon.classList.add("hidden");
+  darkIcon.classList.remove("hidden");
+}
+
+// Toggle theme
+themeToggle.addEventListener("click", () => {
+  if (htmlElement.classList.contains("light")) {
+    // Switch to dark mode
+    htmlElement.classList.remove("light");
+    lightIcon.classList.add("hidden");
+    darkIcon.classList.remove("hidden");
+    localStorage.setItem("theme", "dark");
+  } else {
+    // Switch to light mode
+    htmlElement.classList.add("light");
+    lightIcon.classList.remove("hidden");
+    darkIcon.classList.add("hidden");
+    localStorage.setItem("theme", "light");
+  }
+});
+
 // HLS Video Player Setup
 const video = document.getElementById("video-player");
 const videoSource = "/output/playlist.m3u8";
@@ -6,21 +41,21 @@ const errorMessage = document.getElementById("error-message");
 const streamStatus = document.getElementById("stream-status");
 
 function showError(msg) {
-  errorContainer.classList.remove("d-none");
+  errorContainer.classList.remove("hidden");
   errorMessage.textContent = msg;
   streamStatus.innerHTML = `
-    <span class="status-badge offline">
-      <span class="status-dot"></span>
+    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-medium">
+      <span class="w-2 h-2 bg-red-500 rounded-full status-dot-pulse"></span>
       Disconnected
     </span>
   `;
 }
 
 function hideError() {
-  errorContainer.classList.add("d-none");
+  errorContainer.classList.add("hidden");
   streamStatus.innerHTML = `
-    <span class="status-badge online">
-      <span class="status-dot"></span>
+    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-medium">
+      <span class="w-2 h-2 bg-green-500 rounded-full status-dot-pulse"></span>
       Connected
     </span>
   `;
@@ -131,9 +166,21 @@ const sidebar = document.getElementById("sidebar");
 const sidebarOverlay = document.getElementById("sidebar-overlay");
 
 function toggleSidebar() {
-  hamburgerBtn.classList.toggle("active");
-  sidebar.classList.toggle("active");
-  sidebarOverlay.classList.toggle("active");
+  sidebar.classList.toggle("translate-x-0");
+  sidebar.classList.toggle("-translate-x-full");
+  sidebarOverlay.classList.toggle("hidden");
+
+  // Animate hamburger button
+  const spans = hamburgerBtn.querySelectorAll("span");
+  if (sidebar.classList.contains("translate-x-0")) {
+    spans[0].style.transform = "rotate(45deg) translate(8px, 8px)";
+    spans[1].style.opacity = "0";
+    spans[2].style.transform = "rotate(-45deg) translate(7px, -7px)";
+  } else {
+    spans[0].style.transform = "";
+    spans[1].style.opacity = "";
+    spans[2].style.transform = "";
+  }
 }
 
 hamburgerBtn.addEventListener("click", toggleSidebar);
@@ -143,7 +190,7 @@ sidebarOverlay.addEventListener("click", toggleSidebar);
 const navLinks = document.querySelectorAll(".nav-link");
 navLinks.forEach((link) => {
   link.addEventListener("click", () => {
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       toggleSidebar();
     }
   });
@@ -151,9 +198,16 @@ navLinks.forEach((link) => {
 
 // Handle window resize
 window.addEventListener("resize", () => {
-  if (window.innerWidth > 768) {
-    sidebar.classList.remove("active");
-    sidebarOverlay.classList.remove("active");
-    hamburgerBtn.classList.remove("active");
+  if (window.innerWidth > 1024) {
+    sidebar.classList.remove("-translate-x-full");
+    sidebar.classList.add("translate-x-0");
+    sidebarOverlay.classList.add("hidden");
+    const spans = hamburgerBtn.querySelectorAll("span");
+    spans[0].style.transform = "";
+    spans[1].style.opacity = "";
+    spans[2].style.transform = "";
+  } else {
+    sidebar.classList.add("-translate-x-full");
+    sidebar.classList.remove("translate-x-0");
   }
 });

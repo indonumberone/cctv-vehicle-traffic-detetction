@@ -15,7 +15,6 @@ fps_data = {
 
 @app.route('/')
 def index():
-    """Halaman utama dengan video player"""
     return render_template('index.html')
 
 @app.route('/output/<path:filename>')
@@ -48,7 +47,6 @@ def get_stats():
                 fps_data['last_update'] = time.time()
                 return jsonify(stats)
         else:
-            # Return default data jika file tidak ada
             return jsonify({
                 'fps': fps_data['current_fps'],
                 'target_fps': fps_data['target_fps'],
@@ -59,11 +57,9 @@ def get_stats():
         return jsonify({'error': str(e), 'fps': 0}), 500
 
 if __name__ == '__main__':
-    # Pastikan folder output ada
     if not os.path.exists(OUTPUT_DIR):
         print(f"Warning: Output directory tidak ditemukan: {OUTPUT_DIR}")
     else:
         print(f"Serving HLS files from: {OUTPUT_DIR}")
     
-    # Jalankan Flask app
     app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
