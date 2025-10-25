@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, Response, jsonify
+from flask import Flask, render_template, send_from_directory, Response, jsonify,redirect, url_for
 import os
 import json
 import time
@@ -14,6 +14,7 @@ fps_data = {
 }
 
 @app.route('/')
+@app.route('/cctv')
 def index():
     return render_template('index.html')
 

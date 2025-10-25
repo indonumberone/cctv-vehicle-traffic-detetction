@@ -235,7 +235,7 @@ class Main:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
             
 
-            # cv2.imshow("Tracking", frame)
+            cv2.imshow("Tracking", frame)
             self.hls.write_frame(frame)
             # out.write(frame)
             

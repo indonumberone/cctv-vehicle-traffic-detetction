@@ -36,16 +36,38 @@
         }
       }
 
+      @layer components {
+        .stat-card {
+          @apply bg-dark-100/80 border border-white/10 rounded-xl p-4 sm:p-6 
+                 transition-all hover:-translate-y-1 hover:shadow-2xl 
+                 hover:shadow-primary/20 hover:border-primary/30;
+        }
+
+        .stat-icon {
+          @apply text-2xl sm:text-3xl text-primary;
+        }
+
+        .stat-title {
+          @apply text-gray-400 text-xs sm:text-sm font-normal;
+        }
+
+        .stat-value {
+          @apply text-white text-2xl sm:text-3xl font-semibold mt-2;
+        }
+
+        .stat-subtitle {
+          @apply text-gray-400 text-xs sm:text-sm mt-1;
+        }
+      }
+
       /* Light theme styles */
       .light body {
         @apply bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900;
       }
 
-      .light nav {
-        @apply bg-white/95 border-gray-200;
-      }
-
-      .light aside {
+      .light nav,
+      .light aside,
+      .light #hamburger-btn {
         @apply bg-white/95 border-gray-200;
       }
 
@@ -62,20 +84,13 @@
         @apply text-gray-600;
       }
 
-      .light .text-gray-200 {
-        @apply text-gray-900;
-      }
-
+      .light .text-gray-200,
       .light .text-white {
         @apply text-gray-900;
       }
 
       .light .border-white\/10 {
         @apply border-gray-200;
-      }
-
-      .light #hamburger-btn {
-        @apply bg-white/95 border-gray-200;
       }
 
       .light #hamburger-btn span {
@@ -98,7 +113,6 @@
         <div class="flex items-center justify-between h-16">
           <!-- Left side - Hamburger + Logo -->
           <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
-            <!-- Hamburger Menu Button (Mobile Only) -->
             <button
               class="lg:hidden bg-white/5 border border-white/10 rounded-lg p-2 hover:bg-primary/20 hover:border-primary transition-all"
               id="hamburger-btn"
@@ -199,28 +213,30 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 p-8 pt-24 lg:ml-0">
-        <div class="flex flex-col xl:flex-row gap-8">
+      <main class="flex-1 p-3 pt-20 sm:p-6 sm:pt-24 lg:p-8 lg:pt-24 lg:ml-0">
+        <div class="flex flex-col xl:flex-row gap-4 sm:gap-6 lg:gap-8">
           <!-- Left Section - Video -->
           <div class="flex-1 min-w-0">
             <!-- Top Bar - Header and Location -->
-            <div class="mb-8">
+            <div class="mb-4 sm:mb-6 lg:mb-8">
               <div
-                class="flex flex-col md:flex-row md:items-start md:justify-between gap-4"
+                class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 sm:gap-4"
               >
                 <!-- Page Header - Left -->
                 <div>
-                  <h1 class="text-3xl font-semibold text-white mb-2">
+                  <h1
+                    class="text-2xl sm:text-3xl font-semibold text-white mb-2"
+                  >
                     Rekaman Live CCTV
                   </h1>
-                  <p class="text-gray-400">
+                  <p class="text-gray-400 text-sm sm:text-base">
                     Pantau rekaman live kamera CCTV secara realtime.
                   </p>
                 </div>
 
                 <!-- Location - Right -->
                 <div
-                  class="bg-white/5 p-4 rounded-lg border border-white/10 text-sm md:max-w-md"
+                  class="bg-white/5 p-3 sm:p-4 rounded-lg border border-white/10 text-xs sm:text-sm md:max-w-md"
                 >
                   <i class="bi bi-geo-alt-fill text-primary mr-2"></i>
                   PR52+GPQ, Jl. Marina Emas, Keputih, Kec. Sukolilo, Surabaya,
@@ -235,11 +251,11 @@
 
             <!-- Video Card -->
             <div
-              class="bg-dark-100/80 border border-white/10 rounded-2xl p-6 shadow-2xl"
+              class="bg-dark-100/80 border border-white/10 rounded-xl sm:rounded-2xl p-2 sm:p-4 lg:p-6 shadow-2xl"
             >
               <div
                 id="video-container"
-                class="relative w-full bg-black rounded-xl overflow-hidden aspect-video"
+                class="relative w-full bg-black rounded-lg sm:rounded-xl overflow-hidden aspect-video"
               >
                 <video
                   id="video-player"
@@ -258,7 +274,7 @@
 
               <div
                 id="error-container"
-                class="hidden mt-4 bg-red-500/10 text-red-500 p-4 rounded-lg border border-red-500/30"
+                class="hidden mt-3 sm:mt-4 bg-red-500/10 text-red-500 p-3 sm:p-4 rounded-lg border border-red-500/30 text-sm"
               >
                 <i class="bi bi-exclamation-triangle-fill mr-2"></i>
                 <strong>Error:</strong> <span id="error-message"></span>
@@ -267,75 +283,53 @@
           </div>
 
           <!-- Right Section - Stats Sidebar -->
-          <div class="w-full xl:w-96 flex flex-col gap-6">
-            <div
-              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
-            >
-              <div class="flex items-center gap-4 mb-4">
-                <i class="bi bi-speedometer2 text-3xl text-primary"></i>
-                <div>
-                  <h6 class="text-gray-400 text-sm font-normal">
-                    FPS STREAMING
-                  </h6>
-                </div>
+          <div class="w-full xl:w-96 flex flex-col gap-4 sm:gap-6">
+            <!-- FPS Streaming Card -->
+            <div class="stat-card">
+              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <i class="bi bi-speedometer2 stat-icon"></i>
+                <h6 class="stat-title">FPS STREAMING</h6>
               </div>
-              <div class="text-white text-3xl font-semibold mt-2" id="fps">
-                -- fps
-              </div>
-              <div class="text-gray-400 text-sm mt-1">
+              <div class="stat-value" id="fps">-- fps</div>
+              <div class="stat-subtitle">
                 Target: <span id="target-fps">25</span> fps
               </div>
             </div>
 
-            <div
-              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
-            >
-              <div class="flex items-center gap-4 mb-4">
-                <i class="bi bi-camera-video text-3xl text-primary"></i>
-                <div>
-                  <h6 class="text-gray-400 text-sm font-normal">
-                    STATUS KAMERA
-                  </h6>
-                </div>
+            <!-- Camera Status Card -->
+            <div class="stat-card">
+              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <i class="bi bi-camera-video stat-icon"></i>
+                <h6 class="stat-title">STATUS KAMERA</h6>
               </div>
-              <div class="text-green-500 text-2xl font-semibold mt-2">
+              <div
+                class="text-green-500 text-xl sm:text-2xl font-semibold mt-2"
+              >
                 Active
               </div>
-              <div class="text-gray-400 text-sm mt-1">
-                Stream berjalan normal
-              </div>
+              <div class="stat-subtitle">Stream berjalan normal</div>
             </div>
 
-            <div
-              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
-            >
-              <div class="flex items-center gap-4 mb-4">
-                <i class="bi bi-clock-history text-3xl text-primary"></i>
-                <div>
-                  <h6 class="text-gray-400 text-sm font-normal">UPTIME</h6>
-                </div>
+            <!-- Uptime Card -->
+            <div class="stat-card">
+              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <i class="bi bi-clock-history stat-icon"></i>
+                <h6 class="stat-title">UPTIME</h6>
               </div>
-              <div class="text-white text-3xl font-semibold mt-2" id="uptime">
-                00:00:00
-              </div>
-              <div class="text-gray-400 text-sm mt-1">
-                Waktu streaming aktif
-              </div>
+              <div class="stat-value" id="uptime">00:00:00</div>
+              <div class="stat-subtitle">Waktu streaming aktif</div>
             </div>
 
-            <div
-              class="bg-dark-100/80 border border-white/10 rounded-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/30"
-            >
-              <div class="flex items-center gap-4 mb-4">
-                <i class="bi bi-display text-3xl text-primary"></i>
-                <div>
-                  <h6 class="text-gray-400 text-sm font-normal">RESOLUSI</h6>
-                </div>
+            <!-- Resolution Card -->
+            <div class="stat-card">
+              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <i class="bi bi-display stat-icon"></i>
+                <h6 class="stat-title">RESOLUSI</h6>
               </div>
-              <div class="text-white text-2xl font-semibold mt-2">
+              <div class="text-white text-xl sm:text-2xl font-semibold mt-2">
                 1920x1080
               </div>
-              <div class="text-gray-400 text-sm mt-1">Full HD</div>
+              <div class="stat-subtitle">Full HD</div>
             </div>
           </div>
         </div>

@@ -1,0 +1,72 @@
+/* Tailwind Utilities */
+@layer utilities {
+  .status-dot-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* Tailwind Components */
+@layer components {
+  .stat-card {
+    @apply bg-dark-100/80 border border-white/10 rounded-xl p-4 sm:p-6 
+           transition-all hover:-translate-y-1 hover:shadow-2xl 
+           hover:shadow-primary/20 hover:border-primary/30;
+  }
+
+  .stat-icon {
+    @apply text-2xl sm:text-3xl text-primary;
+  }
+
+  .stat-title {
+    @apply text-gray-400 text-xs sm:text-sm font-normal;
+  }
+
+  .stat-value {
+    @apply text-white text-2xl sm:text-3xl font-semibold mt-2;
+  }
+
+  .stat-subtitle {
+    @apply text-gray-400 text-xs sm:text-sm mt-1;
+  }
+}
+
+/* Light Theme Styles */
+.light body {
+  @apply bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900;
+}
+
+.light nav,
+.light aside,
+.light #hamburger-btn {
+  @apply bg-white/95 border-gray-200;
+}
+
+.light .bg-dark-100\/80,
+.light .bg-white\/5 {
+  @apply bg-white shadow-md;
+}
+
+.light .bg-dark-200\/95 {
+  @apply bg-white/95;
+}
+
+.light .text-gray-400 {
+  @apply text-gray-600;
+}
+
+.light .text-gray-200,
+.light .text-white {
+  @apply text-gray-900;
+}
+
+.light .border-white\/10 {
+  @apply border-gray-200;
+}
+
+.light #hamburger-btn span {
+  @apply bg-primary;
+}
+
+.light #video-container {
+  @apply shadow-xl;
+}

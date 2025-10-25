@@ -41,5 +41,22 @@ services:
     depends_on:
       - influxdb
 
+  webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.webserver
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./output:/app/output
+      - ./webserver:/app/webserver
+    networks:
+      - monitoring
+    depends_on:
+      - influxdb
+      - grafana
+
 networks:
   monitoring:
