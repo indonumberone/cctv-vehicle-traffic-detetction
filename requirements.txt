@@ -1,0 +1,6 @@
+ultralytics
+supervision
+python-dotenv
+poetry
+influxdb-client
+Flask

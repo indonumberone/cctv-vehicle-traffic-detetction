@@ -1,0 +1,11 @@
+.venv
+.vscode
+.env
+*.pyc
+video/*
+video/input/*.mp4
+__pycache__/*
+influxdb-data/*
+grafana-data/*
+grafana-provisioning/*
+video/output/*.mp4

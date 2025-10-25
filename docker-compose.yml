@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=${INFLUXDB_INIT_MODE}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN}
+      - INFLUXDB_HTTP_CORS_ENABLED=true
+      - INFLUXDB_HTTP_CORS_ORIGINS=*
+    volumes:
+      - ./influxdb-data:/var/lib/influxdb2
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+      - ./grafana-provisioning:/etc/grafana/provisioning
+    networks:
+      - monitoring
+    depends_on:
+      - influxdb
+
+  webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.webserver
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./output:/app/output
+      - ./webserver:/app/webserver
+    networks:
+      - monitoring
+    depends_on:
+      - influxdb
+      - grafana
+
+networks:
+  monitoring:

@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir Flask
+
+# Copy application files
+COPY webserver/ ./webserver/
+
+# Create output directory if not exists
+RUN mkdir -p /app/output
+
+# Expose Flask port
+EXPOSE 5000
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Run Flask app
+CMD ["python", "-u", "webserver/app.py"]

@@ -1,0 +1,42 @@
+ffmpeg version n8.0 Copyright (c) 2000-2025 the FFmpeg developers
+built with gcc 15.2.1 (GCC) 20250813
+configuration: --prefix=/usr --disable-debug --disable-static --disable-stripping --enable-amf --enable-avisynth --enable-cuda-llvm --enable-lto --enable-fontconfig --enable-frei0r --enable-gmp --enable-gnutls --enable-gpl --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libdav1d --enable-libdrm --enable-libdvdnav --enable-libdvdread --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgsm --enable-libharfbuzz --enable-libiec61883 --enable-libjack --enable-libjxl --enable-libmodplug --enable-libmp3lame --enable-libopencore_amrnb --enable-libopencore_amrwb --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-libplacebo --enable-libpulse --enable-librav1e --enable-librsvg --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtheora --enable-libv4l2 --enable-libvidstab --enable-libvmaf --enable-libvorbis --enable-libvpl --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxcb --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzmq --enable-nvdec --enable-nvenc --enable-opencl --enable-opengl --enable-shared --enable-vapoursynth --enable-version3 --enable-vulkan
+libavutil      60.  8.100 / 60.  8.100
+libavcodec     62. 11.100 / 62. 11.100
+libavformat    62.  3.100 / 62.  3.100
+libavdevice    62.  1.100 / 62.  1.100
+libavfilter    11.  4.100 / 11.  4.100
+libswscale      9.  1.100 /  9.  1.100
+libswresample   6.  1.100 /  6.  1.100
+Input #0, rawvideo, from 'fd:':
+Duration: N/A, start: 0.000000, bitrate: 1244160 kb/s
+Stream #0:0: Video: rawvideo (BGR[24] / 0x18524742), bgr24, 1920x1080, 1244160 kb/s, 25 tbr, 25 tbn
+Stream mapping:
+Stream #0:0 -> #0:0 (rawvideo (native) -> h264 (libx264))
+[libx264 @ 0x55587a0a2100] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2 AVX512
+[libx264 @ 0x55587a0a2100] profile High 4:4:4 Predictive, level 4.0, 4:4:4, 8-bit
+[libx264 @ 0x55587a0a2100] 264 - core 165 r3222 b35605a - H.264/MPEG-4 AVC codec - Copyleft 2003-2025 - http://www.videolan.org/x264.html - options: cabac=1 ref=1 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=2 psy=1 psy_rd=1.00:0.00 mixed_ref=0 me_range=16 chroma_me=1 trellis=0 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=6 threads=12 lookahead_threads=12 sliced_threads=1 slices=12 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=0 weightp=1 keyint=50 keyint_min=5 scenecut=0 intra_refresh=0 rc=abr mbtree=0 bitrate=5000 ratetol=1.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+Output #0, hls, to './output/playlist.m3u8':
+Metadata:
+encoder         : Lavf62.3.100
+Stream #0:0: Video: h264, yuv444p(tv, progressive), 1920x1080, q=2-31, 5000 kb/s, 25 fps, 90k tbn
+Metadata:
+encoder         : Lavc62.11.100 libx264
+Side data:
+cpb: bitrate max/min/avg: 0/0/5000000 buffer size: 0 vbv_delay: N/A
+frame=   16 fps=0.0 q=26.0 size=N/A time=00:00:00.64 bitrate=N/A speed=1.28x elapsed=0:00:00.50    frame=   16 fps= 16 q=26.0 size=N/A time=00:00:00.64 bitrate=N/A speed=0.64x elapsed=0:00:01.00    frame=   32 fps= 21 q=25.0 size=N/A time=00:00:01.28 bitrate=N/A speed=0.853x elapsed=0:00:01.50    frame=   32 fps= 16 q=25.0 size=N/A time=00:00:01.28 bitrate=N/A speed=0.64x elapsed=0:00:02.00    frame=   48 fps= 19 q=25.0 size=N/A time=00:00:01.92 bitrate=N/A speed=0.768x elapsed=0:00:02.50    [hls @ 0x55587a09f6c0] Opening './output/segment_000.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=   64 fps= 21 q=25.0 size=N/A time=00:00:02.56 bitrate=N/A speed=0.853x elapsed=0:00:03.00    frame=   64 fps= 18 q=25.0 size=N/A time=00:00:02.56 bitrate=N/A speed=0.731x elapsed=0:00:03.50    frame=   80 fps= 20 q=23.0 size=N/A time=00:00:03.20 bitrate=N/A speed= 0.8x elapsed=0:00:04.00    frame=   91 fps= 20 q=22.0 size=N/A time=00:00:03.64 bitrate=N/A speed=0.809x elapsed=0:00:04.50    frame=   96 fps= 19 q=23.0 size=N/A time=00:00:03.84 bitrate=N/A speed=0.768x elapsed=0:00:05.00    [hls @ 0x55587a09f6c0] Opening './output/segment_001.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=  112 fps= 20 q=22.0 size=N/A time=00:00:04.48 bitrate=N/A speed=0.814x elapsed=0:00:05.50    frame=  118 fps= 20 q=22.0 size=N/A time=00:00:04.72 bitrate=N/A speed=0.786x elapsed=0:00:06.00    frame=  128 fps= 20 q=22.0 size=N/A time=00:00:05.12 bitrate=N/A speed=0.787x elapsed=0:00:06.50    frame=  144 fps= 21 q=22.0 size=N/A time=00:00:05.76 bitrate=N/A speed=0.823x elapsed=0:00:07.00    frame=  144 fps= 19 q=22.0 size=N/A time=00:00:05.76 bitrate=N/A speed=0.768x elapsed=0:00:07.50    [hls @ 0x55587a09f6c0] Opening './output/segment_002.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=  160 fps= 20 q=25.0 size=N/A time=00:00:06.40 bitrate=N/A speed= 0.8x elapsed=0:00:08.00    frame=  176 fps= 21 q=22.0 size=N/A time=00:00:07.04 bitrate=N/A speed=0.828x elapsed=0:00:08.50    frame=  176 fps= 20 q=22.0 size=N/A time=00:00:07.04 bitrate=N/A speed=0.782x elapsed=0:00:09.00    frame=  192 fps= 20 q=23.0 size=N/A time=00:00:07.68 bitrate=N/A speed=0.808x elapsed=0:00:09.50    frame=  193 fps= 19 q=23.0 size=N/A time=00:00:07.72 bitrate=N/A speed=0.772x elapsed=0:00:10.00    [hls @ 0x55587a09f6c0] Opening './output/segment_003.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=  208 fps= 20 q=23.0 size=N/A time=00:00:08.32 bitrate=N/A speed=0.792x elapsed=0:00:10.50    frame=  224 fps= 20 q=23.0 size=N/A time=00:00:08.96 bitrate=N/A speed=0.814x elapsed=0:00:11.00    frame=  224 fps= 19 q=23.0 size=N/A time=00:00:08.96 bitrate=N/A speed=0.779x elapsed=0:00:11.50    frame=  240 fps= 20 q=23.0 size=N/A time=00:00:09.60 bitrate=N/A speed= 0.8x elapsed=0:00:12.00    frame=  249 fps= 20 q=23.0 size=N/A time=00:00:09.96 bitrate=N/A speed=0.797x elapsed=0:00:12.50    [hls @ 0x55587a09f6c0] Opening './output/segment_004.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=  256 fps= 20 q=24.0 size=N/A time=00:00:10.24 bitrate=N/A speed=0.788x elapsed=0:00:13.00    frame=  272 fps= 20 q=24.0 size=N/A time=00:00:10.88 bitrate=N/A speed=0.806x elapsed=0:00:13.50    frame=  272 fps= 19 q=24.0 size=N/A time=00:00:10.88 bitrate=N/A speed=0.777x elapsed=0:00:14.00    frame=  288 fps= 20 q=24.0 size=N/A time=00:00:11.52 bitrate=N/A speed=0.794x elapsed=0:00:14.50    frame=  294 fps= 20 q=24.0 size=N/A time=00:00:11.76 bitrate=N/A speed=0.784x elapsed=0:00:15.00    [hls @ 0x55587a09f6c0] Opening './output/segment_005.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=  304 fps= 20 q=25.0 size=N/A time=00:00:12.16 bitrate=N/A speed=0.784x elapsed=0:00:15.50    frame=  320 fps= 20 q=25.0 size=N/A time=00:00:12.80 bitrate=N/A speed= 0.8x elapsed=0:00:16.00    frame=  320 fps= 19 q=25.0 size=N/A time=00:00:12.80 bitrate=N/A speed=0.776x elapsed=0:00:16.50    frame=  336 fps= 20 q=23.0 size=N/A time=00:00:13.44 bitrate=N/A speed=0.79x elapsed=0:00:17.00    [hls @ 0x55587a09f6c0] Opening './output/segment_006.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
+frame=  351 fps= 20 q=21.0 size=N/A time=00:00:14.04 bitrate=N/A speed=0.802x elapsed=0:00:17.50    frame=  352 fps= 20 q=28.0 size=N/A time=00:00:14.08 bitrate=N/A speed=0.782x elapsed=0:00:18.00    frame=  368 fps= 20 q=22.0 size=N/A time=00:00:14.72 bitrate=N/A speed=0.795x elapsed=0:00:18.50    frame=  377 fps= 20 q=22.0 size=N/A time=00:00:15.08 bitrate=N/A speed=0.794x elapsed=0:00:19.00    frame=  384 fps= 20 q=22.0 size=N/A time=00:00:15.36 bitrate=N/A speed=0.788x elapsed=0:00:19.50    frame=  400 fps= 20 q=21.0 size=N/A time=00:00:16.00 bitrate=N/A speed= 0.8x elapsed=0:00:20.00    frame=  400 fps= 20 q=21.0 size=N/A time=00:00:16.00 bitrate=N/A speed=0.78x elapsed=0:00:20.50    [hls @ 0x55587a09f6c0] Opening './output/segment_007.ts' for writing
+[hls @ 0x55587a09f6c0] Opening './output/playlist.m3u8.tmp' for writing
