@@ -1,9 +1,11 @@
 from flask import Flask, render_template, send_from_directory, Response, jsonify,redirect, url_for
 import os
 import json
+from flask_cors import CORS
 import time
 
 app = Flask(__name__)
+CORS(app)
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
 
@@ -18,6 +20,10 @@ fps_data = {
 def index():
     return render_template('index.html')
 
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
 @app.route('/output/<path:filename>')
 def serve_hls(filename):
     """Serve HLS files (playlist.m3u8 dan segment .ts files)"""
@@ -29,9 +35,16 @@ def serve_hls(filename):
         else:
             mimetype = None
         
-        return send_from_directory(OUTPUT_DIR, filename, mimetype=mimetype)
+        response = send_from_directory(OUTPUT_DIR, filename, mimetype=mimetype)
+        # Tambahkan CORS headers secara eksplisit
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
     except Exception as e:
         return Response(f"Error: {str(e)}", status=404)
+
 
 @app.route('/api/stats')
 def get_stats():

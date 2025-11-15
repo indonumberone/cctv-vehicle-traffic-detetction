@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rekaman Live CCTV - SmartPJU Monitor</title>
+    <title>Analytics - SmartPJU Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
@@ -30,33 +30,11 @@
       };
     </script>
     <style type="text/tailwindcss">
-      @layer utilities {
-        .status-dot-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-      }
-
       @layer components {
         .stat-card {
           @apply bg-dark-100/80 border border-white/10 rounded-xl p-4 sm:p-6 
                  transition-all hover:-translate-y-1 hover:shadow-2xl 
                  hover:shadow-primary/20 hover:border-primary/30;
-        }
-
-        .stat-icon {
-          @apply text-2xl sm:text-3xl text-primary;
-        }
-
-        .stat-title {
-          @apply text-gray-400 text-xs sm:text-sm font-normal;
-        }
-
-        .stat-value {
-          @apply text-white text-2xl sm:text-3xl font-semibold mt-2;
-        }
-
-        .stat-subtitle {
-          @apply text-gray-400 text-xs sm:text-sm mt-1;
         }
       }
 
@@ -97,8 +75,18 @@
         @apply bg-primary;
       }
 
-      .light #video-container {
-        @apply shadow-xl;
+      /* Grafana iframe styling */
+      .grafana-container {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 120px);
+        min-height: 600px;
+      }
+
+      .grafana-container iframe {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       }
     </style>
   </head>
@@ -203,7 +191,7 @@
           <li>
             <a
               href="/cctv"
-              class="flex items-center gap-4 px-6 py-3.5 bg-primary/15 text-primary border-l-3 border-primary"
+              class="flex items-center gap-4 px-6 py-3.5 text-gray-400 hover:bg-primary/10 hover:text-primary transition-all border-l-3 border-transparent hover:border-primary"
             >
               <i class="bi bi-camera-video-fill text-xl w-6"></i>
               <span>CCTV</span>
@@ -212,7 +200,7 @@
           <li>
             <a
               href="/analytics"
-              class="flex items-center gap-4 px-6 py-3.5 text-gray-400 hover:bg-primary/10 hover:text-primary transition-all border-l-3 border-transparent hover:border-primary"
+              class="flex items-center gap-4 px-6 py-3.5 bg-primary/15 text-primary border-l-3 border-primary"
             >
               <i class="bi bi-bar-chart-fill text-xl w-6"></i>
               <span>Analytics</span>
@@ -223,129 +211,132 @@
 
       <!-- Main Content -->
       <main class="flex-1 p-3 pt-20 sm:p-6 sm:pt-24 lg:p-8 lg:pt-24 lg:ml-0">
-        <div class="flex flex-col xl:flex-row gap-4 sm:gap-6 lg:gap-8">
-          <!-- Left Section - Video -->
-          <div class="flex-1 min-w-0">
-            <!-- Top Bar - Header and Location -->
-            <div class="mb-4 sm:mb-6 lg:mb-8">
-              <div
-                class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 sm:gap-4"
-              >
-                <!-- Page Header - Left -->
-                <div>
-                  <h1
-                    class="text-2xl sm:text-3xl font-semibold text-white mb-2"
-                  >
-                    Rekaman Live CCTV
-                  </h1>
-                  <p class="text-gray-400 text-sm sm:text-base">
-                    Pantau rekaman live kamera CCTV secara realtime.
-                  </p>
-                </div>
-
-                <!-- Location - Right -->
-                <div
-                  class="bg-white/5 p-3 sm:p-4 rounded-lg border border-white/10 text-xs sm:text-sm md:max-w-md"
-                >
-                  <i class="bi bi-geo-alt-fill text-primary mr-2"></i>
-                  PR52+GPQ, Jl. Marina Emas, Keputih, Kec. Sukolilo, Surabaya,
-                  Jawa Timur 60111
-                  <br />
-                  <small class="text-gray-400"
-                    >Lat: -7.29116 | Long: 112.8018236</small
-                  >
-                </div>
-              </div>
+        <!-- Page Header -->
+        <div class="mb-4 sm:mb-6 lg:mb-8">
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4"
+          >
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-semibold text-white mb-2">
+                <i class="bi bi-bar-chart-fill text-primary mr-2"></i>
+                Traffic Analytics
+              </h1>
+              <p class="text-gray-400 text-sm sm:text-base">
+                Real-time vehicle traffic statistics and insights
+              </p>
             </div>
 
-            <!-- Video Card -->
+            <!-- Time Range Info -->
             <div
-              class="bg-dark-100/80 border border-white/10 rounded-xl sm:rounded-2xl p-2 sm:p-4 lg:p-6 shadow-2xl"
+              class="bg-white/5 px-4 py-2 rounded-lg border border-white/10 text-sm"
             >
-              <div
-                id="video-container"
-                class="relative w-full bg-black rounded-lg sm:rounded-xl overflow-hidden aspect-video"
-              >
-                <video
-                  id="video-player"
-                  controls
-                  autoplay
-                  muted
-                  class="w-full h-full"
-                >
-                  <source
-                    src="/output/playlist.m3u8"
-                    type="application/x-mpegURL"
-                  />
-                  Browser Anda tidak mendukung video tag.
-                </video>
-              </div>
+              <i class="bi bi-clock text-primary mr-2"></i>
+              <span class="text-gray-300">Auto-refresh: 5 seconds</span>
+            </div>
+          </div>
+        </div>
 
-              <div
-                id="error-container"
-                class="hidden mt-3 sm:mt-4 bg-red-500/10 text-red-500 p-3 sm:p-4 rounded-lg border border-red-500/30 text-sm"
-              >
-                <i class="bi bi-exclamation-triangle-fill mr-2"></i>
-                <strong>Error:</strong> <span id="error-message"></span>
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="flex items-center gap-3">
+              <i class="bi bi-graph-up text-2xl text-green-400"></i>
+              <div>
+                <p class="text-gray-400 text-sm">Status</p>
+                <p class="text-white text-lg font-semibold">Live Monitoring</p>
               </div>
             </div>
           </div>
 
-          <!-- Right Section - Stats Sidebar -->
-          <div class="w-full xl:w-96 flex flex-col gap-4 sm:gap-6">
-            <!-- FPS Streaming Card -->
-            <div class="stat-card">
-              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <i class="bi bi-speedometer2 stat-icon"></i>
-                <h6 class="stat-title">FPS STREAMING</h6>
+          <div class="stat-card">
+            <div class="flex items-center gap-3">
+              <i class="bi bi-database text-2xl text-blue-400"></i>
+              <div>
+                <p class="text-gray-400 text-sm">Data Source</p>
+                <p class="text-white text-lg font-semibold">InfluxDB</p>
               </div>
-              <div class="stat-value" id="fps">-- fps</div>
-              <div class="stat-subtitle">
-                Target: <span id="target-fps">25</span> fps
-              </div>
-            </div>
-
-            <!-- Camera Status Card -->
-            <div class="stat-card">
-              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <i class="bi bi-camera-video stat-icon"></i>
-                <h6 class="stat-title">STATUS KAMERA</h6>
-              </div>
-              <div
-                class="text-green-500 text-xl sm:text-2xl font-semibold mt-2"
-              >
-                Active
-              </div>
-              <div class="stat-subtitle">Stream berjalan normal</div>
-            </div>
-
-            <!-- Uptime Card -->
-            <div class="stat-card">
-              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <i class="bi bi-clock-history stat-icon"></i>
-                <h6 class="stat-title">UPTIME</h6>
-              </div>
-              <div class="stat-value" id="uptime">00:00:00</div>
-              <div class="stat-subtitle">Waktu streaming aktif</div>
-            </div>
-
-            <!-- Resolution Card -->
-            <div class="stat-card">
-              <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <i class="bi bi-display stat-icon"></i>
-                <h6 class="stat-title">RESOLUSI</h6>
-              </div>
-              <div class="text-white text-xl sm:text-2xl font-semibold mt-2">
-                1920x1080
-              </div>
-              <div class="stat-subtitle">Full HD</div>
             </div>
           </div>
+
+          <div class="stat-card">
+            <div class="flex items-center gap-3">
+              <i class="bi bi-eye text-2xl text-purple-400"></i>
+              <div>
+                <p class="text-gray-400 text-sm">Visualization</p>
+                <p class="text-white text-lg font-semibold">Grafana</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grafana Dashboard Embed -->
+        <div
+          class="bg-dark-100/80 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl"
+        >
+          <div class="grafana-container">
+            <iframe
+              src="http://localhost:3030/d/vehicle-traffic-v2/vehicle-traffic-dashboard-v2?orgId=1&refresh=5s&kiosk=tv"
+              width="100%"
+              height="100%"
+              frameborder="0"
+            ></iframe>
+          </div>
+        </div>
+
+        <!-- Help Text -->
+        <div
+          class="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-sm"
+        >
+          <i class="bi bi-info-circle text-blue-400 mr-2"></i>
+          <strong class="text-blue-300">Tip:</strong>
+          <span class="text-gray-300">
+            Dashboard akan otomatis refresh setiap 5 detik untuk menampilkan
+            data terbaru. Anda dapat berinteraksi dengan grafik dengan zoom,
+            pan, dan filter.
+          </span>
         </div>
       </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+      // Theme Toggle
+      const themeToggle = document.getElementById("theme-toggle");
+      const lightIcon = document.getElementById("light-icon");
+      const darkIcon = document.getElementById("dark-icon");
+      const htmlElement = document.documentElement;
+
+      // Load saved theme
+      const savedTheme = localStorage.getItem("theme") || "dark";
+      if (savedTheme === "light") {
+        htmlElement.classList.add("light");
+        lightIcon.classList.remove("hidden");
+        darkIcon.classList.add("hidden");
+      }
+
+      themeToggle.addEventListener("click", () => {
+        htmlElement.classList.toggle("light");
+        const isLight = htmlElement.classList.contains("light");
+
+        lightIcon.classList.toggle("hidden", !isLight);
+        darkIcon.classList.toggle("hidden", isLight);
+
+        localStorage.setItem("theme", isLight ? "light" : "dark");
+      });
+
+      // Hamburger Menu
+      const hamburgerBtn = document.getElementById("hamburger-btn");
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebar-overlay");
+
+      hamburgerBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("-translate-x-full");
+        sidebarOverlay.classList.toggle("hidden");
+      });
+
+      sidebarOverlay.addEventListener("click", () => {
+        sidebar.classList.add("-translate-x-full");
+        sidebarOverlay.classList.add("hidden");
+      });
+    </script>
   </body>
 </html>

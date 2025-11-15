@@ -1,1 +1,1 @@
-{"is_running": true, "queue_size": 0, "frames_written": 432, "frames_dropped": 0, "output_dir": "./output", "resolution": "1920x1080", "fps": 21.2, "target_fps": 25, "bitrate": "5000k", "segment_time": 2, "playlist_size": 10}
+{"is_running": true, "queue_size": 0, "frames_written": 20430, "frames_dropped": 0, "output_dir": "./output", "resolution": "1920x1080", "fps": 19.3, "target_fps": 25, "bitrate": "5000k", "segment_time": 2, "playlist_size": 10}
