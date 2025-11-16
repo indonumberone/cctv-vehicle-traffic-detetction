@@ -1,7 +1,7 @@
 import cv2
 import time
 import threading
-
+from .logger import logger
 
 
 class RTSPReconnector:
@@ -24,13 +24,13 @@ class RTSPReconnector:
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             
             if self.cap.isOpened():
-                print(f"✅ Connected to RTSP stream (attempt {self.reconnect_count + 1})")
+                logger.info(f"Connected to RTSP stream (attempt {self.reconnect_count + 1})")
                 return True
             return False
     
     def reconnect(self):
         """Attempt to reconnect"""
-        print(f"Reconnecting... (attempt {self.reconnect_count + 1}/{self.max_retry})")
+        logger.warning(f"Attempting to reconnect... (retry #{self.reconnect_count + 1})")
         
         attempt = 0
         
@@ -39,9 +39,9 @@ class RTSPReconnector:
             time.sleep(self.retry_delay)
             if self.connect():
                 self.reconnect_count += 1
-                print(f"Reconnected to RTSP stream (attempt {self.reconnect_count})")
+                logger.info(f"Successfully reconnected to RTSP stream")
                 return True
-            print(f"reconnect failed ({attempt}")
+            logger.error(f"Reconnect failed (attempt {attempt})")
             
         
         

@@ -1,0 +1,33 @@
+[Unit]
+Description=CCTV Vehicle Traffic Detection System
+After=network.target docker.service influxdb.service
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=pengmas-yolo
+Group=pengmas-yolo
+WorkingDirectory=/home/muqsith/pengmas/testing
+Environment="PATH=/home/muqsith/.local/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="MPLCONFIGDIR=/tmp/matplotlib-cache"
+
+# Load environment variables from .env file
+EnvironmentFile=/home/muqsith/pengmas/testing/.env
+
+# Run the application with venv
+ExecStart=/home/muqsith/pengmas/testing/.venv/bin/python -m src.main
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vehicle-detection
+
+[Install]
+WantedBy=multi-user.target

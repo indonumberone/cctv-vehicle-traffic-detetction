@@ -1,4 +1,4 @@
-from .lib import FPSMeter, FrameProcessor, LineCrossingCounter, RTSPReconnector, InfluxDBLogger,HLSStreamer
+from .lib import FPSMeter, FrameProcessor, LineCrossingCounter, RTSPReconnector, InfluxDBLogger, HLSStreamer, logger
 import cv2
 from ultralytics import YOLO
 from collections import defaultdict, deque
@@ -7,6 +7,7 @@ import time
 import threading
 import os
 import queue
+import sys
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -65,11 +66,11 @@ class Main:
                 consecutive_failures += 1
                 
                 if time.time() - last_success_time > 25:
-                    print(f"Stream timeout detected ({time.time() - last_success_time:.1f}s)")
+                    logger.warning(f"Stream timeout detected ({time.time() - last_success_time:.1f}s)")
                     consecutive_failures = max_failures  # Force reconnect
                 
                 if consecutive_failures >= max_failures:
-                    print(f"Stream disconnected, attempting reconnect...")
+                    logger.error(f"Stream disconnected, attempting reconnect...")
                     self.reconnect_event.set()
                     while not self.frame_queue.empty():
                         try:
@@ -81,9 +82,9 @@ class Main:
                         consecutive_failures = 0
                         last_success_time = time.time()
                         self.reconnect_event.clear()
-                        print("✅ Reconnected successfully!")
+                        logger.info("Reconnected successfully")
                     else:
-                        print("❌ Failed to reconnect, stopping...")
+                        logger.critical("Failed to reconnect, stopping application")
                         self.stop_event.set()
                         break
                 else:
@@ -132,15 +133,16 @@ class Main:
                 continue
 
     def detect(self):
+        logger.info("Starting vehicle detection system...")
         model = YOLO(self.model_path)
         
         rtsp_conn = RTSPReconnector(self.video_input, max_retry=self.retry, retry_delay=3)
         
         if not rtsp_conn.connect():
-            print("Failed to connect to RTSP stream")
+            logger.critical("Failed to connect to RTSP stream")
             return
         if self.hls.start():
-            print("HLS streaming started")
+            logger.info("HLS streaming initialized")
         counter = LineCrossingCounter(self.LINES, global_cleanup_timeout=self.global_cleanup_timeout)
         
         # Initialize InfluxDB logger if needed
@@ -159,9 +161,9 @@ class Main:
                 
                 # Start periodic logging (every 60 seconds)
                 self.influxdb_logger.start_periodic_logging(counter, interval=60)
-                print("Connected to InfluxDB")
+                logger.info("InfluxDB logger connected")
             except Exception as e:
-                print(f"Failed to connect to InfluxDB: {e}")
+                logger.error(f"Failed to connect to InfluxDB: {e}")
                 self.influxdb_logger = None
         
         processor = FrameProcessor(model, counter, model.names, self.CLASSES_TO_TRACK)
@@ -191,12 +193,12 @@ class Main:
             except queue.Empty:
                 if self.reconnect_event.is_set():
                     if not no_frame_warning_shown:
-                        print("Waiting for reconnection...")
+                        logger.warning("Waiting for reconnection...")
                         no_frame_warning_shown = True
                     continue
                 if time.time() - last_frame_time > 5.0:
                     if not no_frame_warning_shown:
-                        print("No frames received for 5 seconds")
+                        logger.warning("No frames received for 5 seconds")
                         no_frame_warning_shown = True
                 continue
 
@@ -235,14 +237,14 @@ class Main:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
             
 
-            cv2.imshow("Tracking", frame)
+            # cv2.imshow("Tracking", frame)
             self.hls.write_frame(frame)
             # out.write(frame)
             
             frame_count += 1
 
             if cv2.waitKey(1) & 0xFF == 27:  # ESC
-                print("ESC pressed, stopping...")
+                logger.info("ESC pressed, stopping application...")
                 self.stop_event.set()
                 self.hls.stop()
                 break
@@ -254,6 +256,7 @@ class Main:
                     self.influxdb_logger.log_counts(incremental_counts)
 
         # Cleanup at the end
+        logger.info("Cleaning up resources...")
         self.stop_event.set()
         read_thread.join(timeout=2)
         process_thread.join(timeout=2)
@@ -262,20 +265,34 @@ class Main:
         rtsp_conn.release()
         out.release()
         cv2.destroyAllWindows()
+        logger.info("Application stopped")
 
 
 def main():
     """Entry point for the application"""
-    app = Main(
-        'model/best.pt', 
-        'video/output/result.mp4', 
-        rtsp_url, 
-        global_cleanup_timeout=3600.0,
-        target_fps=25,
-        retry=10,
-        use_influxdb=True  # Set to False if you don't want to use InfluxDB
-    )
-    app.detect()
+    try:
+        logger.info("="*60)
+        logger.info("CCTV Vehicle Traffic Detection System")
+        logger.info(f"Location: {location_name}")
+        logger.info(f"RTSP URL: {rtsp_url}")
+        logger.info("="*60)
+        
+        app = Main(
+            'model/best.pt', 
+            'video/output/result.mp4', 
+            rtsp_url, 
+            global_cleanup_timeout=3600.0,
+            target_fps=25,
+            retry=10,
+            use_influxdb=True
+        )
+        app.detect()
+    except KeyboardInterrupt:
+        logger.info("Application interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        logger.critical(f"Fatal error: {e}", exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
