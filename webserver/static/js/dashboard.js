@@ -19,146 +19,17 @@ if (currentTheme === "light") {
 // Toggle theme
 themeToggle.addEventListener("click", () => {
   if (htmlElement.classList.contains("light")) {
-    // Switch to dark mode
     htmlElement.classList.remove("light");
     lightIcon.classList.add("hidden");
     darkIcon.classList.remove("hidden");
     localStorage.setItem("theme", "dark");
   } else {
-    // Switch to light mode
     htmlElement.classList.add("light");
     lightIcon.classList.remove("hidden");
     darkIcon.classList.add("hidden");
     localStorage.setItem("theme", "light");
   }
 });
-
-// HLS Video Player Setup
-const video = document.getElementById("video-player");
-const videoSource = "/output/playlist.m3u8";
-const errorContainer = document.getElementById("error-container");
-const errorMessage = document.getElementById("error-message");
-const streamStatus = document.getElementById("stream-status");
-
-function showError(msg) {
-  errorContainer.classList.remove("hidden");
-  errorMessage.textContent = msg;
-  streamStatus.innerHTML = `
-    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/20 text-red-500 border border-red-500/30 rounded-lg text-sm font-medium">
-      <span class="w-2 h-2 bg-red-500 rounded-full status-dot-pulse"></span>
-      Disconnected
-    </span>
-  `;
-}
-
-function hideError() {
-  errorContainer.classList.add("hidden");
-  streamStatus.innerHTML = `
-    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/20 text-green-500 border border-green-500/30 rounded-lg text-sm font-medium">
-      <span class="w-2 h-2 bg-green-500 rounded-full status-dot-pulse"></span>
-      Connected
-    </span>
-  `;
-}
-
-// Check if HLS is natively supported (Safari, iOS)
-if (video.canPlayType("application/vnd.apple.mpegurl")) {
-  video.src = videoSource;
-  video.addEventListener("loadedmetadata", function () {
-    console.log("HLS stream loaded (native)");
-    hideError();
-  });
-  video.addEventListener("error", function () {
-    showError("Failed to load video stream (native player)");
-  });
-}
-// Use hls.js for other browsers
-else if (Hls.isSupported()) {
-  const hls = new Hls({
-    enableWorker: true,
-    lowLatencyMode: true,
-    backBufferLength: 90,
-  });
-
-  hls.loadSource(videoSource);
-  hls.attachMedia(video);
-
-  hls.on(Hls.Events.MANIFEST_PARSED, function () {
-    console.log("HLS manifest parsed");
-    hideError();
-    video.play().catch((e) => {
-      console.log("Autoplay prevented:", e);
-    });
-  });
-
-  hls.on(Hls.Events.ERROR, function (event, data) {
-    console.error("HLS Error:", data);
-    if (data.fatal) {
-      switch (data.type) {
-        case Hls.ErrorTypes.NETWORK_ERROR:
-          showError("Network error - attempting to recover...");
-          hls.startLoad();
-          break;
-        case Hls.ErrorTypes.MEDIA_ERROR:
-          showError("Media error - attempting to recover...");
-          hls.recoverMediaError();
-          break;
-        default:
-          showError("Fatal error - cannot recover stream");
-          hls.destroy();
-          break;
-      }
-    }
-  });
-} else {
-  showError("Browser tidak mendukung HLS streaming");
-}
-
-// Uptime counter
-let uptimeSeconds = 0;
-setInterval(() => {
-  uptimeSeconds++;
-  const hours = Math.floor(uptimeSeconds / 3600);
-  const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-  const seconds = uptimeSeconds % 60;
-  document.getElementById("uptime").textContent = `${String(hours).padStart(
-    2,
-    "0"
-  )}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}, 1000);
-
-// Fetch FPS data from API
-async function updateStats() {
-  try {
-    const response = await fetch("/api/stats");
-    if (response.ok) {
-      const data = await response.json();
-
-      // Update FPS display
-      if (data.fps !== undefined && data.fps > 0) {
-        document.getElementById("fps").textContent = `${data.fps.toFixed(
-          1
-        )} fps`;
-      } else {
-        document.getElementById("fps").textContent = "-- fps";
-      }
-
-      // Update target FPS
-      if (data.target_fps !== undefined) {
-        document.getElementById("target-fps").textContent = data.target_fps;
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching stats:", error);
-    document.getElementById("fps").textContent = "-- fps";
-  }
-}
-
-// Update stats every 1 second
-setInterval(updateStats, 1000);
-
-// Initial fetch
-updateStats();
 
 // Vehicle Counts and Chart
 let vehicleChart = null;
@@ -188,6 +59,8 @@ function initializeChart() {
           backgroundColor: "rgba(59, 130, 246, 0.1)",
           tension: 0.4,
           fill: true,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
         {
           label: "Motorcycle",
@@ -196,6 +69,8 @@ function initializeChart() {
           backgroundColor: "rgba(34, 197, 94, 0.1)",
           tension: 0.4,
           fill: true,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
         {
           label: "Truck",
@@ -204,6 +79,8 @@ function initializeChart() {
           backgroundColor: "rgba(249, 115, 22, 0.1)",
           tension: 0.4,
           fill: true,
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
       ],
     },
@@ -214,6 +91,9 @@ function initializeChart() {
         mode: "index",
         intersect: false,
       },
+      animation: {
+        duration: 750,
+      },
       plugins: {
         legend: {
           display: true,
@@ -222,6 +102,9 @@ function initializeChart() {
             color: textColor,
             usePointStyle: true,
             padding: 15,
+            font: {
+              size: 12,
+            },
           },
         },
         tooltip: {
@@ -245,6 +128,8 @@ function initializeChart() {
             color: textColor,
             maxRotation: 45,
             minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 12,
           },
         },
         y: {
@@ -269,14 +154,23 @@ async function updateVehicleCounts() {
     if (response.ok) {
       const data = await response.json();
 
-      // Update count displays
-      document.getElementById("car-count").textContent = data.car || 0;
-      document.getElementById("motorcycle-count").textContent =
-        data.motorcycle || 0;
-      document.getElementById("truck-count").textContent = data.truck || 0;
+      // Update count displays with animation
+      updateCountWithAnimation("car-count", data.car || 0);
+      updateCountWithAnimation("motorcycle-count", data.motorcycle || 0);
+      updateCountWithAnimation("truck-count", data.truck || 0);
     }
   } catch (error) {
     console.error("Error fetching vehicle counts:", error);
+  }
+}
+
+// Animate count update
+function updateCountWithAnimation(elementId, newValue) {
+  const element = document.getElementById(elementId);
+  const currentValue = parseInt(element.textContent) || 0;
+
+  if (currentValue !== newValue) {
+    element.textContent = newValue;
   }
 }
 
@@ -284,8 +178,21 @@ async function updateVehicleCounts() {
 async function updateVehicleChart() {
   try {
     const hours = document.getElementById("chart-time-range").value;
+
+    // Determine interval based on time range
+    let interval;
+    if (parseFloat(hours) <= 0.5) {
+      interval = "1m"; // 1 minute for 10-30 min range
+    } else if (parseFloat(hours) <= 3) {
+      interval = "5m"; // 5 minutes for 1-3 hour range
+    } else if (parseFloat(hours) <= 12) {
+      interval = "10m"; // 10 minutes for 6-12 hour range
+    } else {
+      interval = "30m"; // 30 minutes for 24 hour range
+    }
+
     const response = await fetch(
-      `/api/vehicle-chart?hours=${hours}&interval=10m`
+      `/api/vehicle-chart?hours=${hours}&interval=${interval}`
     );
 
     if (response.ok) {
@@ -333,7 +240,7 @@ async function updateVehicleChart() {
         vehicleChart.data.datasets[0].data = carData;
         vehicleChart.data.datasets[1].data = motorcycleData;
         vehicleChart.data.datasets[2].data = truckData;
-        vehicleChart.update();
+        vehicleChart.update("none"); // Update without animation for better performance
       }
     }
   } catch (error) {
@@ -344,12 +251,12 @@ async function updateVehicleChart() {
 // Initialize chart on page load
 initializeChart();
 
-// Update vehicle data every 5 seconds
-setInterval(updateVehicleCounts, 5000);
+// Update vehicle data every 10 seconds (reduced frequency)
+setInterval(updateVehicleCounts, 10000);
 updateVehicleCounts();
 
-// Update chart every 30 seconds
-setInterval(updateVehicleChart, 30000);
+// Update chart every 60 seconds (reduced frequency)
+setInterval(updateVehicleChart, 60000);
 updateVehicleChart();
 
 // Update chart when time range changes

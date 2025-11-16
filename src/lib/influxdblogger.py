@@ -44,38 +44,40 @@ class InfluxDBLogger:
             return False
             
     def log_counts(self, counts_dict):
-        """Log all vehicle class counts at once"""
+        """Log vehicle class counts incrementally (+1 per event)
+        Use sum() in InfluxDB queries to get totals"""
         with self.lock:
-            # Only log if counts have changed
-            if counts_dict == self.last_counts:
+            # Skip if no new events (all values are 0)
+            if not counts_dict or all(v == 0 for v in counts_dict.values()):
                 return True
                 
             points = []
             for class_name, count in counts_dict.items():
-                point = Point(self.measurement) \
-                    .tag("location", self.location_name) \
-                    .tag("class", class_name) \
-                    .field("count", count) \
-                    .time(time.time_ns())
-                points.append(point)
+                if count > 0:  # Only log if there's an actual event
+                    point = Point(self.measurement) \
+                        .tag("location", self.location_name) \
+                        .tag("class", class_name) \
+                        .field("count", count) \
+                        .time(time.time_ns())
+                    points.append(point)
                 
             try:
                 if points:
                     self.write_api.write(bucket=self.bucket, record=points)
-                    self.last_counts = counts_dict.copy()
+                    print(f"✅ Logged {len(points)} incremental event(s) to InfluxDB")
                 return True
             except Exception as e:
                 print(f"Error writing to InfluxDB: {e}")
                 return False
 
-    def log_crossing_event(self, class_name, track_id, line_id):
-        """Log individual crossing events"""
+    def log_crossing_event(self, class_name, track_id, line_id, count=1):
+        """Log individual crossing events with incremental count"""
         point = Point("crossing_events") \
             .tag("location", self.location_name) \
             .tag("class", class_name) \
             .tag("line_id", f"line_{line_id}") \
             .field("track_id", track_id) \
-            .field("event", 1) \
+            .field("event", count) \
             .time(time.time_ns())
         
         try:
@@ -86,11 +88,13 @@ class InfluxDBLogger:
             return False
             
     def start_periodic_logging(self, counter, interval=60):
-        """Start a background thread to periodically log counts"""
+        """Start a background thread to periodically log incremental counts"""
         def _log_periodically():
             while self.running:
-                counts = counter.get_counts()
-                self.log_counts(counts)
+                # Get incremental counts (resets after reading)
+                incremental_counts = counter.get_incremental_counts()
+                if incremental_counts:
+                    self.log_counts(incremental_counts)
                 time.sleep(interval)
                 
         thread = threading.Thread(target=_log_periodically, daemon=True)

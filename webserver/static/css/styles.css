@@ -46,7 +46,8 @@
   @apply bg-white shadow-md;
 }
 
-.light .bg-dark-200\/95 {
+.light .bg-dark-200\/95,
+.light .bg-dark-200 {
   @apply bg-white/95;
 }
 
@@ -69,4 +70,8 @@
 
 .light #video-container {
   @apply shadow-xl;
+}
+
+.light select {
+  @apply bg-gray-100 text-gray-900 border-gray-300;
 }

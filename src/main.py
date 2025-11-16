@@ -247,10 +247,11 @@ class Main:
                 self.hls.stop()
                 break
 
-            # Log counts to InfluxDB when they change
+            # Log incremental counts to InfluxDB
             if self.influxdb_logger:
-                current_counts = counter.get_counts()
-                self.influxdb_logger.log_counts(current_counts)
+                incremental_counts = counter.get_incremental_counts()
+                if incremental_counts:
+                    self.influxdb_logger.log_counts(incremental_counts)
 
         # Cleanup at the end
         self.stop_event.set()

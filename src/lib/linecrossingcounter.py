@@ -6,13 +6,14 @@ class LineCrossingCounter:
     def __init__(self, lines, global_cleanup_timeout=3600.0):
         self.lines = lines
         self.track_history = {}
-        self.class_counts = defaultdict(int)
+        self.class_counts = defaultdict(int)  # Keep for display purposes only
         self.crossed_ids_per_line = [set() for _ in lines]  
         self.global_crossed_ids = set() 
         self.last_reset_day = datetime.now().day
         self.global_cleanup_timeout = global_cleanup_timeout  
         self.global_crossed_timestamps = {}  
         self.crossing_callback = None
+        self.incremental_counts = defaultdict(int)  # For incremental counting
 
     def update(self, track_id, class_name, center):
         current_time = time.time()
@@ -23,6 +24,7 @@ class LineCrossingCounter:
             print(f"Count sebelumnya: {dict(self.class_counts)}")
             
             self.class_counts = defaultdict(int)
+            self.incremental_counts = defaultdict(int)
             self.crossed_ids_per_line = [set() for _ in self.lines]
             self.global_crossed_ids = set()
             self.global_crossed_timestamps = {}
@@ -46,15 +48,19 @@ class LineCrossingCounter:
                         self.crossed_ids_per_line[i].add(track_id)
                         print(f"{class_name} ID {track_id} crossed line {i+1}")
                         
-                        # Call the callback if it exists
-                        if hasattr(self, 'crossing_callback') and self.crossing_callback:
-                            self.crossing_callback(class_name, track_id, i+1)
-                        
                         if track_id not in self.global_crossed_ids:
                             self.global_crossed_ids.add(track_id)
                             self.global_crossed_timestamps[track_id] = current_time
-                            self.class_counts[class_name] += 1
-                            print(f"COUNTED: {class_name} ID {track_id}")
+                            
+                            # Incremental: Always +1 for each crossing event
+                            self.incremental_counts[class_name] = 1
+                            self.class_counts[class_name] += 1  # Keep cumulative for display
+                            
+                            # Call the callback with incremental count (+1)
+                            if hasattr(self, 'crossing_callback') and self.crossing_callback:
+                                self.crossing_callback(class_name, track_id, i+1, 1)
+                            
+                            print(f"COUNTED: {class_name} ID {track_id} (+1)")
                         else:
                             print(f"Already counted: {class_name} ID {track_id}")
 
@@ -78,7 +84,15 @@ class LineCrossingCounter:
                (ccw(p1, p2, line_start) * ccw(p1, p2, line_end) < 0)
 
     def get_counts(self):
+        """Get cumulative counts for display"""
         return self.class_counts
+    
+    def get_incremental_counts(self):
+        """Get incremental counts (+1 per event) for InfluxDB"""
+        counts = dict(self.incremental_counts)
+        # Reset incremental counts after reading
+        self.incremental_counts = defaultdict(int)
+        return counts
     
     def get_line_crossings(self):
         return {f"Line {i+1}": len(crossed_ids) 

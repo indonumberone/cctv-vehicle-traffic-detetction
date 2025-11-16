@@ -285,63 +285,6 @@
 
           <!-- Right Section - Stats Sidebar -->
           <div class="w-full xl:w-96 flex flex-col gap-4 sm:gap-6">
-            <!-- Vehicle Counts Cards -->
-            <div class="grid grid-cols-3 gap-2 sm:gap-4">
-              <!-- Car Count -->
-              <div class="stat-card">
-                <i class="bi bi-car-front text-xl text-blue-400"></i>
-                <div
-                  class="text-white text-lg sm:text-2xl font-bold mt-2"
-                  id="car-count"
-                >
-                  0
-                </div>
-                <div class="text-gray-400 text-xs">Car</div>
-              </div>
-
-              <!-- Motorcycle Count -->
-              <div class="stat-card">
-                <i class="bi bi-bicycle text-xl text-green-400"></i>
-                <div
-                  class="text-white text-lg sm:text-2xl font-bold mt-2"
-                  id="motorcycle-count"
-                >
-                  0
-                </div>
-                <div class="text-gray-400 text-xs">Motor</div>
-              </div>
-
-              <!-- Truck Count -->
-              <div class="stat-card">
-                <i class="bi bi-truck text-xl text-orange-400"></i>
-                <div
-                  class="text-white text-lg sm:text-2xl font-bold mt-2"
-                  id="truck-count"
-                >
-                  0
-                </div>
-                <div class="text-gray-400 text-xs">Truck</div>
-              </div>
-            </div>
-
-            <!-- Vehicle Chart -->
-            <div class="stat-card">
-              <div class="flex items-center justify-between mb-4">
-                <h6 class="stat-title">GRAFIK KENDARAAN</h6>
-                <select
-                  id="chart-time-range"
-                  class="bg-dark-200 text-white text-xs px-2 py-1 rounded border border-white/10"
-                >
-                  <option value="1">1 Jam</option>
-                  <option value="3">3 Jam</option>
-                  <option value="6" selected>6 Jam</option>
-                  <option value="12">12 Jam</option>
-                  <option value="24">24 Jam</option>
-                </select>
-              </div>
-              <canvas id="vehicleChart" class="w-full" height="200"></canvas>
-            </div>
-
             <!-- FPS Streaming Card -->
             <div class="stat-card">
               <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -395,6 +338,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cctv.js') }}"></script>
   </body>
 </html>

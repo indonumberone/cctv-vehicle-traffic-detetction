@@ -8,12 +8,12 @@ services:
     ports:
       - "8086:8086"
     environment:
-      - DOCKER_INFLUXDB_INIT_MODE=${INFLUXDB_INIT_MODE}
-      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME}
-      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
-      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_INIT_ORG}
-      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET}
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN}
+      - DOCKER_INFLUXDB_INIT_MODE=${INFLUXDB_INIT_MODE:-setup}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD:-password123}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_INIT_ORG:-myorg}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET:-vehicle_counting}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN:-mytoken123}
       - INFLUXDB_HTTP_CORS_ENABLED=true
       - INFLUXDB_HTTP_CORS_ORIGINS=*
     volumes:
@@ -25,11 +25,12 @@ services:
     image: grafana/grafana:10.4.2
     container_name: grafana
     restart: unless-stopped
+    user: "0:0" # Run as root to avoid permission issues
     ports:
       - "3030:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_AUTH_ANONYMOUS_ENABLED=false
@@ -49,6 +50,12 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN:-mytoken123}
+      - INFLUXDB_INIT_ORG=${INFLUXDB_INIT_ORG:-myorg}
+      - INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET:-vehicle_counting}
+      - LOCATION_NAME=${LOCATION_NAME:-camera1}
     volumes:
       - ./output:/app/output
       - ./webserver:/app/webserver
