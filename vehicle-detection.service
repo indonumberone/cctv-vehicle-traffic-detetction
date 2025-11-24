@@ -7,18 +7,18 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
-User=pengmas-yolo
-Group=pengmas-yolo
-WorkingDirectory=/home/muqsith/pengmas/testing
-Environment="PATH=/home/muqsith/.local/bin:/usr/local/bin:/usr/bin:/bin"
+User=muqsith
+Group=muqsith
+WorkingDirectory=%h/pengmas/cctv-vehicle-traffic-detetction
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="MPLCONFIGDIR=/tmp/matplotlib-cache"
 
 # Load environment variables from .env file
-EnvironmentFile=/home/muqsith/pengmas/testing/.env
+EnvironmentFile=%h/pengmas/cctv-vehicle-traffic-detetction/.env
 
 # Run the application with venv
-ExecStart=/home/muqsith/pengmas/testing/.venv/bin/python -m src.main
+ExecStart=%h/pengmas/cctv-vehicle-traffic-detetction/.venv/bin/python -m src.main
 
 # Restart policy
 Restart=always
